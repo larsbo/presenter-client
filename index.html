@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>simple client</title>
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/jquery.mobile.min.css">
+  <link rel="stylesheet" href="css/stylesheet.css">
+</head>
+<body>
+
+<div id="wrap">
+
+  <div class="container">
+    <a class="close" data-dismiss="alert" href="#">&times;</a>
+    <div class="page-header">
+      <h1>Presenter</h1>
+    </div>
+    <p class="lead">
+      Multitouch App for collaborative working with media files powered by jquery, bootstrap, node.js, Ratchet & websockets.
+    </p>
+  </div>
+
+  <div id="sidebar-left">
+    <p><i class="icon-ok-sign icon-white"></i> Verbunden!</p>
+    <dl class="clients">
+    </dl>
+  </div>
+
+  <div id="bg-change-container">
+    <select id="backgroundChanger">
+      <option data-img-src="img/bg/background-1.jpg" value="1">Hintergrund 1</option>
+      <option data-img-src="img/bg/background-2.jpg" value="2">Hintergrund 2</option>
+      <option data-img-src="img/bg/background-3.jpg" value="3">Hintergrund 3</option>
+      <option data-img-src="img/bg/background-4.jpg" value="4">Hintergrund 4</option>
+      <option data-img-src="img/bg/background-5.jpg" value="5">Hintergrund 5</option>
+      <option data-img-src="img/bg/background-6.jpg" value="6">Hintergrund 6</option>
+      <option data-img-src="img/bg/background-7.jpg" value="7">Hintergrund 7</option>
+      <option data-img-src="img/bg/background-8.jpg" value="8">Hintergrund 8</option>
+      <option data-img-src="img/bg/background-9.jpg" value="9">Hintergrund 9</option>
+    </select>
+    <p>
+      <button id="btn" class="btn btn-large">Hello world!</button>
+    </p>
+
+  </div>
+
+  <div id="image-container">
+    <img id="img" class="img-polaroid ui-widget-content" src="bilder/fenster.jpg" width="400" style="left: 200px;" />
+  </div>
+
+  <div id="push"></div>
+</div>
+<div id="footer">
+  <div class="container">
+    <p class="muted credit">
+      Presenter 0.2 &middot; &copy; 2013 Lars Borchert.
+    </p>
+  </div>
+</div>
+
+<script src="js/vendor/jquery-1.9.0.min.js"></script>
+<script src="js/vendor/bootstrap.min.js"></script>
+<script src="js/vendor/image-picker.js"></script>
+<script src="js/vendor/meow.js"></script>
+<script src="js/vendor/autobahn.min.js"></script>
+
+<script src="js/vendor/jquery-ui-1.10.0.custom.min.js"></script>
+<!--<script src="js/vendor/jquery.mobile-1.2.0.min.js"></script>-->
+<!--<script src="js/vendor/quo.js"></script>-->
+<!--<script src="js/vendor/touchy.js"></script>-->
+<!--<script src="js/vendor/hoverable.js"></script>-->
+<!--<script src="js/vendor/touchable.js"></script>-->
+
+<script src="js/main.js"></script>
+<script src="js/wampClient.js"></script>
+<script src="js/gestures.js"></script>
+<script src="tools/client.php?callback=getip"></script>
+</body>
+</html>
