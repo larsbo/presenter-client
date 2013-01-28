@@ -16,6 +16,7 @@ $(document).ready(function(){
 				publishDrag(elem.attr('id'), pos.left, pos.top);
 			}
 		},
+		containment: "parent",
 		stack: "#image-container .image"
 	});
 

@@ -12,7 +12,17 @@
 
 <div id="wrap">
 
-  <div class="navbar navbar-fixed-top">
+  <div id="image-container">
+    <div class="image" title="Bild-Titel und so" id="image1">
+      <img src="bilder/fenster.jpg" width="400" />
+    </div>
+
+    <div class="image" title="noch ein bild" id="image2">
+      <img src="bilder/elefant.jpg" width="300" />
+    </div>
+  </div>
+
+  <div id="bar" class="navbar navbar-fixed-top">
     <div class="navbar-inner">
       <a class="brand" href="#">Presenter</a>
       <div class="divider-vertical pull-left"></div>
@@ -39,10 +49,11 @@
     </div>
   </div>
 
-  <div id="sidebar-left">
-    <dl class="clients">
-    </dl>
-  </div>
+  <div class="notifications top-right"></div>
+
+  <button id="toggle-button" type="button" class="btn btn-small">
+    <i class="icon-chevron-up"></i>
+  </button>
 
   <div id="bg-change-container" style="display:none">
     <select id="backgroundChanger">
@@ -59,21 +70,16 @@
     <p>
       <button id="btn" class="btn btn-large">Hello world!</button>
     </p>
-
   </div>
 
-  <div id="image-container">
-    <div class="image" title="Bild-Titel und so" id="image1">
-      <img src="bilder/fenster.jpg" width="400" />
-    </div>
-
-    <div class="image" title="noch ein bild" id="image2">
-      <img src="bilder/elefant.jpg" width="300" />
-    </div>
+  <div id="sidebar-left">
+    <dl class="clients">
+    </dl>
   </div>
 
   <div id="push"></div>
 </div>
+
 <div id="footer">
   <p class="muted credit pull-left">
     Multitouch App for collaborative working with media files powered by 
@@ -81,7 +87,7 @@
     <a href="http://twitter.github.com/bootstrap">bootstrap</a>,
     <a href="http://nodejs.org">node.js</a>,
     <a href="http://socketo.me">Ratchet</a>,
-    <a href="http://autobahn.ws">Autobahn</a>
+    <a href="http://autobahn.ws">Autobahn.ws</a>
   </span>
   <p class="muted credit pull-right">
     &copy; 2013 Lars Borchert
@@ -91,7 +97,7 @@
 <script src="js/vendor/jquery-1.9.0.min.js"></script>
 <script src="js/vendor/bootstrap.min.js"></script>
 <script src="js/vendor/image-picker.js"></script>
-<script src="js/vendor/meow.js"></script>
+<script src="js/vendor/notify.js"></script>
 <script src="js/vendor/autobahn.min.js"></script>
 
 <script src="js/vendor/jquery-ui-1.10.0.custom.min.js"></script>
