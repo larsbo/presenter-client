@@ -44,17 +44,24 @@
         else if(this.options.message.text)
           this.$note.text(this.options.message.text);
 
-    if(this.options.closable)
+    if(this.options.closable) {
       var link = $('<a class="close pull-right">&times;</a>');
       $(link).on('click', $.proxy(onClose, this));
       this.$note.prepend(link);
-
+    }
     return this;
   };
 
   onClose = function() {
     this.options.onClose();
     $(this.$note).remove();
+    // clear instanz
+    this.options.closable = true;
+    this.options.fadeOut = {
+      enabled: true,
+      delay: 3000
+    };
+    this.options.message = null;
     this.options.onClosed();
   };
 
@@ -67,9 +74,7 @@
   };
 
   Notification.prototype.hide = function () {
-    if(this.options.fadeOut.enabled)
-      this.$note.delay(this.options.fadeOut.delay || 3000).fadeOut('slow', $.proxy(onClose, this));
-    else onClose.call(this);
+    this.$note.fadeOut('slow', $.proxy(onClose, this));
   };
 
   $.fn.notify = function (options) {

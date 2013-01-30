@@ -7,12 +7,14 @@
   <title>simple client</title>
   <link rel="stylesheet" href="css/bootstrap.min.css">
   <link rel="stylesheet" href="css/stylesheet.css">
+  <script src="js/vendor/modernizr.min.js"></script>
 </head>
 <body>
 
 <div id="wrap">
 
   <div id="image-container">
+<!--
     <div class="image" title="Bild-Titel und so" id="image1">
       <img src="bilder/fenster.jpg" width="400" />
     </div>
@@ -20,6 +22,7 @@
     <div class="image" title="noch ein bild" id="image2">
       <img src="bilder/elefant.jpg" width="300" />
     </div>
+-->
   </div>
 
   <div id="bar" class="navbar navbar-fixed-top">
@@ -55,8 +58,8 @@
     <i class="icon-chevron-up"></i>
   </button>
 
-  <div id="bg-change-container" style="display:none">
-    <select id="backgroundChanger">
+  <div id="background-changer-container">
+    <select id="background-changer">
       <option data-img-src="img/bg/background-1.jpg" value="1">Hintergrund 1</option>
       <option data-img-src="img/bg/background-2.jpg" value="2">Hintergrund 2</option>
       <option data-img-src="img/bg/background-3.jpg" value="3">Hintergrund 3</option>
@@ -77,6 +80,20 @@
     </dl>
   </div>
 
+  <form enctype="multipart/form-data" method="post" action="" id="fileupload">
+  <div id="sidebar-right">
+    <p>
+      <span id="upload-button" class="btn btn-block btn-primary">
+        <i class="icon-plus icon-white"></i>
+        <span>Dateien hinzuf&uuml;gen</span>
+        <input id="upload-input" type="file" multiple="" name="files[]">
+      </span>
+    </p>
+    <dl id="file-container" class="files">
+    </dl>
+  </div>
+  </form>
+
   <div id="push"></div>
 </div>
 
@@ -95,12 +112,14 @@
 </div>
 
 <script src="js/vendor/jquery-1.9.0.min.js"></script>
+<script src="js/vendor/jquery-ui-1.10.0.custom.min.js"></script>
 <script src="js/vendor/bootstrap.min.js"></script>
+<script src="js/vendor/autobahn.min.js"></script>
 <script src="js/vendor/image-picker.js"></script>
 <script src="js/vendor/notify.js"></script>
-<script src="js/vendor/autobahn.min.js"></script>
+<script src="js/vendor/fileupload.js"></script>
+<script src="js/vendor/iframe-transport.js"></script>
 
-<script src="js/vendor/jquery-ui-1.10.0.custom.min.js"></script>
 <!--<script src="js/vendor/jquery.mobile-1.2.0.min.js"></script>-->
 <!--<script src="js/vendor/quo.js"></script>-->
 <!--<script src="js/vendor/touchy.js"></script>-->
@@ -110,6 +129,5 @@
 <script src="js/main.js"></script>
 <script src="js/wampClient.js"></script>
 <script src="js/gestures.js"></script>
-<script src="tools/client.php?callback=getip"></script>
 </body>
 </html>

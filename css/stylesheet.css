@@ -11,7 +11,7 @@ body {
   color: #fff;
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5); }
 
-/* Wrapper for page content to push down footer */
+/*****  LAYOUT  *****/
 #wrap {
   min-height: 100%;
   height: auto !important;
@@ -40,20 +40,31 @@ body {
   display: none;
   font-size: 12px;
   left: 0;
-  min-height: 128px;
+  min-height: 100px;
   padding-top: 36px;
   position: absolute;
-  width: 150px;
+  width: 128px;
   top: 0; }
   #sidebar-left dl {
     margin-bottom: 10px; }
   #sidebar-left p {
     margin: 5px; }
 
+#sidebar-right {
+  background-color: rgba(0, 0, 0, 0.2);
+  font-size: 12px;
+  right: 0;
+  min-height: 40%;
+  position: absolute;
+  width: 220px;
+  top: 20%; }
+  #sidebar-right p {
+    margin: 10px; }
+
 #image-container {
   height: 100%;
   left: 0;
-  padding: 100px;
+  padding: 55px 0 68px;
   position: absolute;
   top: 0;
   width: 100%; }
@@ -93,6 +104,10 @@ a:focus, .btn:focus {
   padding-left: 10px;
   padding-right: 10px; }
 
+.progress {
+  margin: 5px -20px 5px 0;
+  width: 200px; }
+
 /*****  STYLES  *****/
 .status {
   background-position: left center;
@@ -115,6 +130,43 @@ a:focus, .btn:focus {
   padding: 2px 7px;
   text-shadow: 0 1px 1px white; }
 
+#upload-button {
+  overflow: hidden;
+  position: relative; }
+
+#upload-input {
+  cursor: pointer;
+  opacity: 0;
+  position: absolute;
+  right: -10px;
+  transform: translate(-300px, 0px) scale(4); }
+
+.files {
+  font-size: 14px;
+  margin-right: 10px;
+  margin-bottom: 10px; }
+  .files dd {
+    cursor: pointer;
+    line-height: 15px;
+    padding: 5px; }
+    .files dd:hover {
+      background-color: rgba(0, 0, 0, 0.5); }
+      .files dd:hover .icon-remove {
+        display: inline-block; }
+    .files dd.checked {
+      background-color: rgba(255, 255, 255, 0.5); }
+      .files dd.checked i {
+        display: inline-block; }
+    .files dd .title {
+      float: left; }
+    .files dd i {
+      display: none; }
+      .files dd i.icon-ok {
+        float: left;
+        padding-right: 6px; }
+      .files dd i.icon-remove {
+        float: right; }
+
 .image {
   background: white;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
@@ -135,13 +187,17 @@ a:focus, .btn:focus {
     content: attr(title);
     position: relative;
     top: 15px; }
-  .image:hover {
+  .image:hover, .image.hover, .image.active {
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.7);
-    z-index: 10;
     -webkit-transform: scale(1.05);
     -moz-transform: scale(1.05);
     -o-transform: scale(1.05);
     transform: scale(1.05); }
+  .image.hover {
+    background-color: #000;
+    z-index: 1000; }
+  .image.active {
+    background-color: #B9CDD7; }
   .image img {
     display: block; }
 
@@ -191,8 +247,11 @@ a:focus, .btn:focus {
   -o-text-shadow: 0px -1px 0px rgba(0, 0, 0, 0.2);
   text-shadow: 0px -1px 0px rgba(0, 0, 0, 0.2);
   -webkit-font-smoothing: antialiased; }
+  .alert-bangTidy .close {
+    color: #fff; }
 
-#bg-change-container {
+#background-changer-container {
+  display: none;
   position: absolute;
   right: 10px;
   top: 20px;
