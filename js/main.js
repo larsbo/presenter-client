@@ -78,6 +78,11 @@ $(document).ready(function(){
 						containment: "parent",
 						stack: "#image-container .image"
 					});
+					// publish new element
+					if (sess) {
+						sess.publish("add", data.context, true);
+					}
+
 				imageCounter++;
 			});
 		}

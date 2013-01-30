@@ -34,6 +34,7 @@ $(document).ready(function(){
 	var images = $('#image-container').find('.image');
 
 	connectForm.submit(function(e){
+		// connect to server
 		e.preventDefault();
 		var server = $('#server').val();
 		if (server != '') {
@@ -43,13 +44,12 @@ $(document).ready(function(){
 	});
 
 	disconnectForm.submit(function(e){
+		// disconnect from server
 		e.preventDefault();
 		connectForm.show();
 		disconnectForm.hide().find('.server-ip').html('');
 		sidebar.slideUp('fast').find('.clients').html('');
-
-		sess.publish("disconnect", { client: sess._session_id }, true);
-		sess = null;
+		disconnect();
 	});
 
 	toggleButton.click(function(){
@@ -67,6 +67,9 @@ $(document).ready(function(){
 		}
 	}
 
+	function collectElements() {
+		return $('#image-container').find('.image');
+	}
 
 /*****  WAMP SERVER COMMUNICATION  *****/
 
@@ -79,16 +82,20 @@ $(document).ready(function(){
 			sess = session;
 	
 			// subscribe to topic, providing an event handler
-			sess.subscribe("drag", onDrag);
-			sess.subscribe("drag-start", onDragStart);
 			sess.subscribe("connect", onConnect);
 			sess.subscribe("disconnect", onDisconnect);
-			//sess.subscribe("drag-end", onEvent);
+			sess.subscribe("drag", onDrag);
+			sess.subscribe("drag-start", onDragStart);
+			sess.subscribe("add", onAdd);
+			sess.subscribe("remove", onRemove);
 
+			// publish session id & current elements on connect
 			sess.publish("connect", {
 				client: sess._session_id,
-				elements: getIDs(images)
+				elements: collectElements()
 			}, true);
+
+			console.log('send elements to server: ' + collectElements());
 
 			notifyContainer.notify({
 				message: { text: 'Verbindung hergestellt!' },
@@ -102,7 +109,8 @@ $(document).ready(function(){
 			sidebar.slideDown('slow');
 
 		}, function (code, reason) {
-			// WAMP connection lost or could not establish
+
+			/*****  WAMP connection lost or could not establish  *****/
 			sess = null;
 			notifyContainer.notify({
 				message: { text: reason },
@@ -114,12 +122,27 @@ $(document).ready(function(){
 		});
 	};
 
-	// got message from server
+	function disconnect() {
+		// unsubscribe from all topics
+		sess.unsubscribe("drag");
+		sess.unsubscribe("drag-start");
+		sess.unsubscribe("connect");
+		sess.unsubscribe("disconnect");
+
+		sess.publish("disconnect", { client: sess._session_id }, true);
+		sess = null;
+	}
+
+
+
+/*****  EVENTS FROM SERVER  *****/
+
 	function onDrag(topic, event) {
 		if (event.publisher != sess._session_id) {
 			changePosition(event);
 		}
 	}
+
 	function onDragStart(topic, event) {
 		if (event.publisher != sess._session_id) {
 			var element = event.el;
@@ -129,6 +152,7 @@ $(document).ready(function(){
 			}).show();
 		}
 	}
+
 	function onConnect(topic, event) {
 		// add new client to list
 		if (!sidebar.find($('#' + event.client))) {
@@ -136,10 +160,20 @@ $(document).ready(function(){
 			sidebar.find('.clients').append(client);
 		}
 		// synchronize positions
-		console.log(event.elements);
+		console.log('got elements from other client: ' + event.elements);
 	}
+
 	function onDisconnect(topic, event) {
+		// remove disconnected client
 		sidebar.find($('#' + event.client)).remove();
+	}
+
+	function onAdd(topic, event) {
+		console.log(event);
+	}
+
+	function onRemove(topic, event) {
+		console.log(event);
 	}
 });
 
