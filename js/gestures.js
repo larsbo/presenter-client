@@ -4,13 +4,13 @@ $(document).ready(function(){
 	images.draggable({
 		start: function() {
 			/* publish 'drag start' if connected */
-			if (sess) {
+			if (sess && sess._websocket_connected) {
 				publishDragStart($(this).attr('id'));
 			}
 		},
 		drag: function() {
 			/* publish current position if connected */
-			if (sess) {
+			if (sess && sess._websocket_connected) {
 				var elem = $(this);
 				var pos = elem.position();
 				publishDrag(elem.attr('id'), pos.left, pos.top);

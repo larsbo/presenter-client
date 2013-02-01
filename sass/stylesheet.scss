@@ -5,9 +5,9 @@ html, body {
 }
 
 body {
-	overflow:hidden;
-	-ms-content-zooming:none;
-	-ms-touch-action:none;
+	overflow: hidden;
+	-ms-content-zooming: none;
+	-ms-touch-action: none;
 
 	background-image: url("../img/bg/background-1.jpg");
 	background-repeat: no-repeat;
@@ -48,14 +48,10 @@ body {
 	display: none;
 	font-size: 12px;
 	left: 0;
-	min-height: 100px;
 	padding-top: 36px;
 	position: absolute;
 	width: 128px;
 	top: 0;
-	dl {
-		margin-bottom: 10px;
-	}
 	p {
 		margin: 5px;
 	}
@@ -133,7 +129,7 @@ a:focus, .btn:focus {
 }
 
 
-/*****  STYLES  *****/
+/*****  CONNECTION BAR  *****/
 .status {
 	background-position: left center;
 	background-repeat: no-repeat;
@@ -143,18 +139,46 @@ a:focus, .btn:focus {
 		background-image: url("../img/connected.gif");
 	}
 }
-.server-ip {
-	background-color: rgba(255,255,255,0.5);
+.server-ip, .client-name {
+	background-color: rgba(255,255,255,0.8) !important;
 	border-radius: 4px;
-	box-shadow: 0 1px 0 white, 0 1px 3px 0 rgba(0, 0, 0, 0.3) inset;
+	box-shadow: 0 1px 0 white, 0 1px 3px 0 rgba(0, 0, 0, 0.3) inset !important;
 	color: #555;
 	display: inline-block;
 	font-family: menlo,monaco,"andale mono","courier new",fixed;
 	font-style: italic;
 	font-weight: bold;
 	line-height: 17px;
-	padding: 2px 7px;
+	margin-right: 10px;
+	margin-top: 0px !important;
+	padding: 2px 7px !important;
 	text-shadow: 0 1px 1px #fff;
+}
+.client-name {
+	background-color: rgba(0,0,0,0.1) !important;
+	height: 17px !important;
+	padding-top: 4px !important;
+	width: 150px !important;
+	&:focus {
+		background-color: #fff !important;
+	}
+}
+
+
+
+/*****  CLIENT SIDEBAR  *****/
+.clients {
+	dl {
+		margin-bottom: 10px;
+		.current {
+			color: #0cf;
+			font-weight: bold;
+		}
+	}
+	h4 {
+		font-size: 16px;
+		padding-left: 10px;
+	}
 }
 
 #upload-button {
@@ -169,6 +193,8 @@ a:focus, .btn:focus {
 	transform: translate(-300px, 0px) scale(4);
 }
 
+
+/*****  FILES SIDEBAR  *****/
 .files {
 	font-size: 14px;
 	margin-right: 10px;
@@ -198,7 +224,7 @@ a:focus, .btn:focus {
 				float: left;
 				padding-right: 6px;
 			}
-			&.icon-remove {
+			&.icon-trash {
 				float: right;
 			}
 		}
@@ -238,7 +264,7 @@ a:focus, .btn:focus {
 		z-index: 1000;
 	}
 	&.active {
-		background-color: #B9CDD7;
+		border: 2px solid #09C;
 	}
 	img {
 		display: block;
