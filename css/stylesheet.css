@@ -58,14 +58,15 @@ body {
   #sidebar-right p {
     margin: 10px; }
 
-#image-container {
-  height: 100%;
+#element-container {
+  height: 95%;
   left: 0;
-  padding: 55px 0 68px;
+  margin: 3% -0.5% 5% -0.5%;
+  overflow: hidden;
   position: absolute;
   top: 0;
   width: 100%; }
-  #image-container img {
+  #element-container img {
     position: relative; }
 
 /*****  BOOTSTRAP  *****/
@@ -176,14 +177,16 @@ a:focus, .btn:focus {
       .files dd.checked i {
         display: inline-block; }
     .files dd .title {
-      float: left; }
+      float: left;
+      padding-left: 10px; }
     .files dd i {
-      display: none; }
+      display: none;
+      float: right; }
       .files dd i.icon-ok {
-        float: left;
         padding-right: 6px; }
-      .files dd i.icon-trash {
-        float: right; }
+      .files dd i.icon-picture {
+        display: block;
+        float: left; }
 
 .image {
   background: white;

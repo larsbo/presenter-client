@@ -40,13 +40,14 @@ $(document).ready(function(){
 
 	var fileContainer = $('#file-container');
 	var uploadInput = $('#upload-input');
+	var removeFilesButton = $('#remove-files');
 
 	var notifyContainer = $('.top-right');
 
-	var imageContainer = $('#image-container');
-	var images = imageContainer.find('.image');
-	var videos = imageContainer.find('.video');
-	var other = imageContainer.find('.other');
+	var elementContainer = $('#element-container');
+	var images = elementContainer.find('.image');
+	var videos = elementContainer.find('.video');
+	var other = elementContainer.find('.other');
 
 	var idCounter = images.length;
 
@@ -66,7 +67,6 @@ $(document).ready(function(){
 			var message = notifyContainer.notify({
 				message: { html: "<small>Datei wird geladen...</small><div class=\"progress progress-striped active\"><div class=\"bar\"></div></div>" },
 				fadeOut: { enabled: false },
-				closable: false,
 				type: 'bangTidy'
 			});
 			message.show();
@@ -85,8 +85,9 @@ $(document).ready(function(){
 		done: function(e, data) {
 			$.each(data.result.files, function (index, file) {
 				// add element to file list
-				var el = $('<dd data-id="' + idCounter + '" class="clearfix"><i class="icon-ok"></i><span class="title">' + file.name + '</span><i class="icon-trash"></i></dd>');
-				el.appendTo(fileContainer);
+				var el = $('<dd data-id="' + idCounter + '" class="clearfix"><i class="icon-picture"></i><span class="title">' + file.name + '</span><i class="icon-trash"></i><i class="icon-ok"></i></dd>');
+				fileContainer.append(el).trigger('updateFileList');
+
 				// remove message
 				data.context.hide();
 
@@ -101,8 +102,8 @@ $(document).ready(function(){
 				}
 
 				// add element to surface
-				$('<div class="image" title="' + file.name + '" id="image-' + idCounter + '"><img src="' + uploadDir + 'files/' + file.name + '" width="300" /></div>')
-					.appendTo(imageContainer)
+				$('<div class="image" title="' + file.name + '" id="element-' + idCounter + '"><img src="' + uploadDir + 'files/' + file.name + '" width="300" /></div>')
+					.appendTo(elementContainer)
 					.draggable({
 						start: function() {
 							/* publish 'drag start' if connected */
@@ -119,7 +120,7 @@ $(document).ready(function(){
 							}
 						},
 						containment: "parent",
-						stack: "#image-container .image"
+						stack: "#element-container .image"
 					});
 				idCounter++;
 			});
@@ -130,27 +131,37 @@ $(document).ready(function(){
 	/*****  FILE LIST  *****/
 	fileContainer
 	.on('mouseenter', 'dd', function(event) {
-		$('#image-' + $(this).data('id')).addClass('hover');
+		$('#element-' + $(this).data('id')).addClass('hover');
 	})
 	.on('mouseleave', 'dd', function(event) {
-		$('#image-' + $(this).data('id')).removeClass('hover');
+		$('#element-' + $(this).data('id')).removeClass('hover');
 	})
 	.on('click', 'dd', function(event) {
 		var el = $(this);
 		if (el.hasClass('checked')) {
 			el.removeClass('checked');
-			$('#image-' + el.data('id')).removeClass('active').addClass('hover');
+			$('#element-' + el.data('id')).removeClass('active').addClass('hover');
 		} else {
 			el.addClass('checked');
-			$('#image-' + el.data('id')).removeClass('hover').addClass('active');
+			$('#element-' + el.data('id')).removeClass('hover').addClass('active');
 		}
 	})
-	.on('click', '.icon-remove', function(event) {
-		var el = $(this).parent();
-		el.fadeOut();
-		$('#image-' + el.data('id')).fadeOut();
+	.on('click', '.icon-trash', function(event) {
+		removeFile($(this).parent());
+	})
+	.bind('updateFileList', function() {
+		if (fileContainer.find('dd').length == 0) {
+			removeFilesButton.fadeOut();
+		} else {
+			removeFilesButton.fadeIn();
+		}
 	});
 
+	removeFilesButton.click(function() {
+		fileContainer.find('dd').each(function(i, element) {
+			removeFile($(element));
+		});
+	});
 
 
 /*****  WAMP SERVER COMMUNICATION  *****/
@@ -288,11 +299,12 @@ $(document).ready(function(){
 		if (element.session != sess.sessionid()) {
 
 			// add element to file list
-			fileContainer.append($('<dd data-id="' + idCounter + '" class="clearfix"><i class="icon-ok"></i><span class="title">' + element.name + '</span><i class="icon-trash"></i></dd>'));
+			var el = $('<dd data-id="' + idCounter + '" class="clearfix"><i class="icon-picture"></i><span class="title">' + element.name + '</span><i class="icon-trash"></i><i class="icon-ok"></i></dd>');
+				el.appendTo(fileContainer).trigger('elementAdded');
 
 			// add element to surface
-			$('<div class="image" title="' + element.name + '" id="image-' + idCounter + '"><img src="' + element.path + element.name + '" width="300" /></div>')
-				.appendTo(imageContainer)
+			$('<div class="image" title="' + element.name + '" id="element-' + idCounter + '"><img src="' + element.path + element.name + '" width="300" /></div>')
+				.appendTo(elementContainer)
 				.draggable({
 					start: function() {
 						/* publish 'drag start' if connected */
@@ -309,7 +321,7 @@ $(document).ready(function(){
 						}
 					},
 					containment: "parent",
-					stack: "#image-container .image"
+					stack: "#element-container .image"
 				});
 			idCounter++;
 		}
@@ -372,19 +384,38 @@ $(document).ready(function(){
 				top: data.y
 			})
 		}
-	}
+	};
+
 
 	function collectElements() {
-		return $('#image-container').find('.image');
-	}
+		return elementContainer.find('.image');
+	};
+
 
 	function getIDs(array) {
 		return $.map(array, function(n, i){
 			return n.id;
 		});
-	}
+	};
 
 
+	function removeFile(file) {
+		// remove file list entry
+		file.fadeOut('slow', '', function(){
+			file.remove();
+			fileContainer.trigger('updateFileList');
+		});
+
+		// remove element
+		$('#element-' + file.data('id')).fadeOut('slow', '', function(){
+			$(this).remove();
+		});
+
+		/* publish 'remove item' if connected */
+		if (sess && sess._websocket_connected) {
+			publishRemove(file.data('id'));
+		}
+	};
 
 
 	/*****  background changer  *****/
@@ -403,5 +434,31 @@ $(document).ready(function(){
 		}
 	}
 
+});
 
+// Window load event used just in case window height is dependant upon images
+$(window).bind("load", function() { 
+	var footerHeight = 0,
+		footerTop = 0,
+		$footer = $("#footer");
+
+	function positionFooter() {
+		footerHeight = $footer.height();
+		footerTop = ($(window).scrollTop()+$(window).height()-footerHeight)+"px";
+	
+		if ( ($(document.body).height()+footerHeight) < $(window).height()) {
+			$footer.css({
+				position: "absolute"
+			}).animate({
+				top: footerTop
+			});
+		} else {
+			$footer.css({
+				position: "static"
+			});
+		}
+	}
+
+	positionFooter();
+	$(window).scroll(positionFooter).resize(positionFooter);
 });

@@ -68,10 +68,11 @@ body {
 		margin: 10px;
 	}
 }
-#image-container {
-	height: 100%;
+#element-container {
+	height: 95%;
 	left: 0;
-	padding: 55px 0 68px;
+	margin: 3% -0.5% 5% -0.5%;
+	overflow: hidden;
 	position: absolute;
 	top: 0;
 	width: 100%;
@@ -217,15 +218,17 @@ a:focus, .btn:focus {
 		}
 		.title {
 			float: left;
+			padding-left: 10px;
 		}
 		i {
 			display: none;
+			float: right;
 			&.icon-ok {
-				float: left;
 				padding-right: 6px;
 			}
-			&.icon-trash {
-				float: right;
+			&.icon-picture {
+				display: block;
+				float: left;
 			}
 		}
 	}
