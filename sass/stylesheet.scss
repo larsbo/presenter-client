@@ -60,9 +60,8 @@ body {
 	background-color: rgba(0, 0, 0, 0.2);
 	font-size: 12px;
 	right: 0;
-	min-height: 40%;
 	position: absolute;
-	width: 220px;
+	min-width: 220px;
 	top: 20%;
 	p {
 		margin: 10px;
@@ -140,39 +139,38 @@ a:focus, .btn:focus {
 		background-image: url("../img/connected.gif");
 	}
 }
-.server-ip, .client-name {
-	background-color: rgba(255,255,255,0.8) !important;
+.server-ip {
+	font-weight: bold;
+}
+.client-name {
+	background-color: rgba(0,0,0,0.1) !important;
 	border-radius: 4px;
 	box-shadow: 0 1px 0 white, 0 1px 3px 0 rgba(0, 0, 0, 0.3) inset !important;
-	color: #555;
+	color: #777 !important;
 	display: inline-block;
 	font-family: menlo,monaco,"andale mono","courier new",fixed;
 	font-style: italic;
 	font-weight: bold;
+	height: 17px !important;
 	line-height: 17px;
 	margin-right: 10px;
-	margin-top: 0px !important;
-	padding: 2px 7px !important;
+	margin-top: -1px !important;
+	padding: 4px 7px !important;
 	text-shadow: 0 1px 1px #fff;
-}
-.client-name {
-	background-color: rgba(0,0,0,0.1) !important;
-	height: 17px !important;
-	padding-top: 4px !important;
 	width: 150px !important;
 	&:focus {
 		background-color: #fff !important;
+		color: #03f !important;
 	}
 }
 
 
-
-/*****  CLIENT SIDEBAR  *****/
+/*****  CLIENTS SIDEBAR  *****/
 .clients {
 	dl {
 		margin-bottom: 10px;
 		.current {
-			color: #0cf;
+			color: #03f;
 			font-weight: bold;
 		}
 	}
@@ -182,6 +180,8 @@ a:focus, .btn:focus {
 	}
 }
 
+
+/*****  FILES SIDEBAR  *****/
 #upload-button {
 	overflow: hidden;
 	position: relative;
@@ -194,8 +194,6 @@ a:focus, .btn:focus {
 	transform: translate(-300px, 0px) scale(4);
 }
 
-
-/*****  FILES SIDEBAR  *****/
 .files {
 	font-size: 14px;
 	margin-right: 10px;
@@ -218,7 +216,7 @@ a:focus, .btn:focus {
 		}
 		.title {
 			float: left;
-			padding-left: 10px;
+			padding: 0 10px;
 		}
 		i {
 			display: none;
@@ -226,7 +224,7 @@ a:focus, .btn:focus {
 			&.icon-ok {
 				padding-right: 6px;
 			}
-			&.icon-picture {
+			&:first-child {
 				display: block;
 				float: left;
 			}
@@ -234,16 +232,16 @@ a:focus, .btn:focus {
 	}
 }
 
-.image {
+
+/*****  ELEMENTS  *****/
+.element {
 	background: white;
 	box-shadow: 0 4px 6px rgba(0,0,0,.3);
-	cursor: pointer;
-	display: inline;
 	float: left;
+	display: inline;
 	margin: 0 15px 30px;
 	padding: 10px 10px 25px;
 	text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
-	z-index: 0;
 	-webkit-transition: transform .15s linear;
 		 -moz-transition: transform .15s linear;
 			 -o-transition: transform .15s linear;
@@ -269,11 +267,16 @@ a:focus, .btn:focus {
 	&.active {
 		border: 2px solid #09C;
 	}
-	img {
+	audio, img, video {
 		display: block;
 	}
 }
+.image {
+	cursor: pointer;
+}
 
+
+/*****  MESSAGES  ****/
 .notifications {
 	position: fixed;
 	&.top-right {
@@ -298,7 +301,7 @@ a:focus, .btn:focus {
 		margin: 5px 0px;
 	}
 }
-.alert-bangTidy {
+.alert-default {
 	box-sizing: border-box;
 	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 	background: rgba(0, 0, 0, 0.80);

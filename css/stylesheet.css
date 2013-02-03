@@ -51,9 +51,8 @@ body {
   background-color: rgba(0, 0, 0, 0.2);
   font-size: 12px;
   right: 0;
-  min-height: 40%;
   position: absolute;
-  width: 220px;
+  min-width: 220px;
   top: 20%; }
   #sidebar-right p {
     margin: 10px; }
@@ -115,39 +114,40 @@ a:focus, .btn:focus {
   .status.connected {
     background-image: url("../img/connected.gif"); }
 
-.server-ip, .client-name {
-  background-color: rgba(255, 255, 255, 0.8) !important;
+.server-ip {
+  font-weight: bold; }
+
+.client-name {
+  background-color: rgba(0, 0, 0, 0.1) !important;
   border-radius: 4px;
   box-shadow: 0 1px 0 white, 0 1px 3px 0 rgba(0, 0, 0, 0.3) inset !important;
-  color: #555;
+  color: #777777 !important;
   display: inline-block;
   font-family: menlo,monaco,"andale mono","courier new",fixed;
   font-style: italic;
   font-weight: bold;
+  height: 17px !important;
   line-height: 17px;
   margin-right: 10px;
-  margin-top: 0px !important;
-  padding: 2px 7px !important;
-  text-shadow: 0 1px 1px white; }
-
-.client-name {
-  background-color: rgba(0, 0, 0, 0.1) !important;
-  height: 17px !important;
-  padding-top: 4px !important;
+  margin-top: -1px !important;
+  padding: 4px 7px !important;
+  text-shadow: 0 1px 1px white;
   width: 150px !important; }
   .client-name:focus {
-    background-color: white !important; }
+    background-color: white !important;
+    color: #0033ff !important; }
 
-/*****  CLIENT SIDEBAR  *****/
+/*****  CLIENTS SIDEBAR  *****/
 .clients dl {
   margin-bottom: 10px; }
   .clients dl .current {
-    color: #0cf;
+    color: #03f;
     font-weight: bold; }
 .clients h4 {
   font-size: 16px;
   padding-left: 10px; }
 
+/*****  FILES SIDEBAR  *****/
 #upload-button {
   overflow: hidden;
   position: relative; }
@@ -159,7 +159,6 @@ a:focus, .btn:focus {
   right: -10px;
   transform: translate(-300px, 0px) scale(4); }
 
-/*****  FILES SIDEBAR  *****/
 .files {
   font-size: 14px;
   margin-right: 10px;
@@ -178,50 +177,53 @@ a:focus, .btn:focus {
         display: inline-block; }
     .files dd .title {
       float: left;
-      padding-left: 10px; }
+      padding: 0 10px; }
     .files dd i {
       display: none;
       float: right; }
       .files dd i.icon-ok {
         padding-right: 6px; }
-      .files dd i.icon-picture {
+      .files dd i:first-child {
         display: block;
         float: left; }
 
-.image {
+/*****  ELEMENTS  *****/
+.element {
   background: white;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-  cursor: pointer;
-  display: inline;
   float: left;
+  display: inline;
   margin: 0 15px 30px;
   padding: 10px 10px 25px;
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
-  z-index: 0;
   -webkit-transition: transform 0.15s linear;
   -moz-transition: transform 0.15s linear;
   -o-transition: transform 0.15s linear;
   transition: transform 0.15s linear; }
-  .image:after {
+  .element:after {
     color: #333;
     font-size: 20px;
     content: attr(title);
     position: relative;
     top: 15px; }
-  .image:hover, .image.hover, .image.active {
+  .element:hover, .element.hover, .element.active {
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.7);
     -webkit-transform: scale(1.05);
     -moz-transform: scale(1.05);
     -o-transform: scale(1.05);
     transform: scale(1.05); }
-  .image.hover {
+  .element.hover {
     background-color: #000;
     z-index: 1000; }
-  .image.active {
+  .element.active {
     border: 2px solid #0099cc; }
-  .image img {
+  .element audio, .element img, .element video {
     display: block; }
 
+.image {
+  cursor: pointer; }
+
+/*****  MESSAGES  ****/
 .notifications {
   position: fixed; }
   .notifications.top-right {
@@ -241,7 +243,7 @@ a:focus, .btn:focus {
     z-index: 9999;
     margin: 5px 0px; }
 
-.alert-bangTidy {
+.alert-default {
   box-sizing: border-box;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   background: rgba(0, 0, 0, 0.8);
@@ -268,7 +270,7 @@ a:focus, .btn:focus {
   -o-text-shadow: 0px -1px 0px rgba(0, 0, 0, 0.2);
   text-shadow: 0px -1px 0px rgba(0, 0, 0, 0.2);
   -webkit-font-smoothing: antialiased; }
-  .alert-bangTidy .close {
+  .alert-default .close {
     color: #fff; }
 
 #background-changer-container {

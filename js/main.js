@@ -33,23 +33,22 @@ $(document).ready(function(){
 	var disconnectForm = $('#disconnect-form');
 	var clientName = $('#client-name');
 	var toggleButton = $('#toggle-button');
-	var notifyContainer = $('.top-right');
 
-	var sidebar = $('#sidebar-left');
+	var notifyContainer = $('#notifications');
+
+	var sidebarLeft = $('#sidebar-left');
 	var clientContainer = $('#client-container');
 
 	var fileContainer = $('#file-container');
 	var uploadInput = $('#upload-input');
 	var removeFilesButton = $('#remove-files');
 
-	var notifyContainer = $('.top-right');
-
 	var elementContainer = $('#element-container');
+	var elementCounter = 0;
+
 	var images = elementContainer.find('.image');
 	var videos = elementContainer.find('.video');
 	var other = elementContainer.find('.other');
-
-	var idCounter = images.length;
 
 	var backgroundChanger = $('#background-changer');
 
@@ -66,8 +65,7 @@ $(document).ready(function(){
 			var file = data.files[0];
 			var message = notifyContainer.notify({
 				message: { html: "<small>Datei wird geladen...</small><div class=\"progress progress-striped active\"><div class=\"bar\"></div></div>" },
-				fadeOut: { enabled: false },
-				type: 'bangTidy'
+				fadeOut: { enabled: false }
 			});
 			message.show();
 			data.context = message;
@@ -84,45 +82,79 @@ $(document).ready(function(){
 
 		done: function(e, data) {
 			$.each(data.result.files, function (index, file) {
-				// add element to file list
-				var el = $('<dd data-id="' + idCounter + '" class="clearfix"><i class="icon-picture"></i><span class="title">' + file.name + '</span><i class="icon-trash"></i><i class="icon-ok"></i></dd>');
-				fileContainer.append(el).trigger('updateFileList');
+				console.log(file);
 
-				// remove message
+				// add element to file list
+				var type, image, content;
+				switch (file.type) {
+
+				case 'image/jpeg':
+				case 'image/png':
+				case 'image/gif':
+				case 'image/bmp':
+				case 'image/tiff':
+					type = 'image';
+					image = 'icon-picture';
+					content = '<img src="' + uploadDir + 'files/' + file.name + '" width="300" />';
+					break;
+
+				case 'video/mp4':
+				case 'video/ogv':
+				case 'video/webm':
+					type = 'video';
+					image = 'icon-film';
+					content = '<video src="' + uploadDir + 'files/' + file.name + '" width="320" height="200" controls preload></video>';
+					break;
+
+				case 'audio/mpeg':
+				case 'audio/ogg':
+					type = 'audio';
+					image = 'icon-volume-up';
+					content = '<audio src="' + uploadDir + 'files/' + file.name + '" controls preload></audio>';
+					break;
+
+				case 'application/pdf':
+					type = 'image';
+					image = 'icon-file';
+					content = file.name;
+					break;
+
+				case 'text/plain':
+					type = 'text';
+					image = 'icon-file-alt';
+					content = file.name;
+					break;
+				
+				default:
+					type = 'unknown';
+					image = 'icon-question-sign';
+					content = 'Unbekannter Datentyp.';
+				}
+
+				$('<dd data-id="' + elementCounter + '" class="clearfix"><i class="' + image + '"></i><span class="title">' + file.name + '</span><i class="icon-trash"></i></dd>').appendTo(fileContainer);
+
+				var el = $('<div class="element ' + type + '" title="' + file.name + '" id="element-' + elementCounter + '">' + content + '</div>');
+
+				// add element to surface
+				el.appendTo(elementContainer);
+
+				// make element draggable & resizeable
+				addGestures(el);
+
+				// update file list & element counter
+				fileContainer.trigger('updateFileList');
+
+				// remove upload message
 				data.context.hide();
 
 				// publish new element
 				if (sess && sess._websocket_connected) {
 					sess.publish("add", {
-						id: idCounter,
 						session: sess.sessionid(),
 						name: file.name,
 						path: uploadDir + 'files/'
 					}, true);
 				}
-
-				// add element to surface
-				$('<div class="image" title="' + file.name + '" id="element-' + idCounter + '"><img src="' + uploadDir + 'files/' + file.name + '" width="300" /></div>')
-					.appendTo(elementContainer)
-					.draggable({
-						start: function() {
-							/* publish 'drag start' if connected */
-							if (sess && sess._websocket_connected) {
-								publishDragStart($(this).attr('id'));
-							}
-						},
-						drag: function() {
-							/* publish current position if connected */
-							if (sess && sess._websocket_connected) {
-								var elem = $(this);
-								var pos = elem.position();
-								publishDrag(elem.attr('id'), pos.left, pos.top);
-							}
-						},
-						containment: "parent",
-						stack: "#element-container .image"
-					});
-				idCounter++;
 			});
 		}
 	});
@@ -143,25 +175,28 @@ $(document).ready(function(){
 			$('#element-' + el.data('id')).removeClass('active').addClass('hover');
 		} else {
 			el.addClass('checked');
-			$('#element-' + el.data('id')).removeClass('hover').addClass('active');
+			$('#element-' + el.data('id')).addClass('active');
 		}
 	})
 	.on('click', '.icon-trash', function(event) {
 		removeFile($(this).parent());
 	})
 	.bind('updateFileList', function() {
-		if (fileContainer.find('dd').length == 0) {
+		// update element counter
+		elementCounter = fileContainer.find('dd').length;
+
+		if (elementCounter == 0) {
 			removeFilesButton.fadeOut();
 		} else {
 			removeFilesButton.fadeIn();
 		}
 	});
-
 	removeFilesButton.click(function() {
 		fileContainer.find('dd').each(function(i, element) {
 			removeFile($(element));
 		});
 	});
+
 
 
 /*****  WAMP SERVER COMMUNICATION  *****/
@@ -191,25 +226,19 @@ $(document).ready(function(){
 			});
 
 			//console.log('client: ' + sess._session_id);
-			//console.log('send elements to server: ' + collectElements());
-
-			notifyContainer.notify({
-				message: { text: 'Verbindung hergestellt!' },
-				type: 'bangTidy'
-			}).show();
+			notifyContainer.notify({ message: { text: 'Verbindung hergestellt!' } }).show();
 
 			// modify layout
 			connectForm.hide();
 			disconnectForm.show();
 			disconnectForm.find('.server-ip').text(server);
 			disconnectForm.find('.client-name').val(sess.sessionid());
-			sidebar.slideDown('slow');
+			sidebarLeft.slideDown('slow');
 
 		},
 
 		/*****  WAMP connection lost or could not establish  *****/
 		function (code, reason) {
-			// disconnect from server
 			disconnect(reason);
 		});
 	};
@@ -219,17 +248,14 @@ $(document).ready(function(){
 		sess.close();
 
 		// show message
-		notifyContainer.notify({
-			message: { text: message },
-			type: 'bangTidy'
-		}).show();
+		notifyContainer.notify({ message: { text: message } }).show();
 
 		// reset layout
 		connectForm.show().find('button').button('reset');
 		disconnectForm.hide().find('.server-ip').html('');
-		sidebar.slideUp('slow');
+		sidebarLeft.slideUp('slow');
 		clientContainer.html('');
-	}
+	};
 
 
 
@@ -253,8 +279,6 @@ $(document).ready(function(){
 				});
 			});
 		}
-		// TODO: synchronize positions
-		//console.log('got elements from other client: ' + event.elements);
 	}
 
 	function onDisconnect(topic, event) {
@@ -285,54 +309,66 @@ $(document).ready(function(){
 
 	function onDragStart(topic, event) {
 		if (event.publisher != sess.sessionid()) {
-			var element = event.el;
-			notifyContainer.notify({
-				message: { text: 'Bewege ' + element },
-				type: 'bangTidy'
-			}).show();
+			notifyContainer.notify({ message: { text: 'Bewege ' + event.el } }).show();
 		}
 	}
 
-	// added new media element to present
+	// added new media element
 	function onAdd(topic, element) {
-		//console.log(element);
 		if (element.session != sess.sessionid()) {
 
 			// add element to file list
-			var el = $('<dd data-id="' + idCounter + '" class="clearfix"><i class="icon-picture"></i><span class="title">' + element.name + '</span><i class="icon-trash"></i><i class="icon-ok"></i></dd>');
-				el.appendTo(fileContainer).trigger('elementAdded');
+			$('<dd data-id="' + elementCounter + '" class="clearfix"><i class="icon-picture"></i><span class="title">' + element.name + '</span><i class="icon-trash"></i></dd>').appendTo(fileContainer);
+
+			var el = $('<div class="image" title="' + element.name + '" id="element-' + elementCounter + '"><img src="' + element.path + element.name + '" width="300" /></div>');
 
 			// add element to surface
-			$('<div class="image" title="' + element.name + '" id="element-' + idCounter + '"><img src="' + element.path + element.name + '" width="300" /></div>')
-				.appendTo(elementContainer)
-				.draggable({
-					start: function() {
-						/* publish 'drag start' if connected */
-						if (sess && sess._websocket_connected) {
-							publishDragStart($(this).attr('id'));
-						}
-					},
-					drag: function() {
-						/* publish current position if connected */
-						if (sess && sess._websocket_connected) {
-							var elem = $(this);
-							var pos = elem.position();
-							publishDrag(elem.attr('id'), pos.left, pos.top);
-						}
-					},
-					containment: "parent",
-					stack: "#element-container .image"
-				});
-			idCounter++;
+			el.appendTo(elementContainer);
+
+			// make element draggable & resizeable
+			addGestures(el);
+
+			// update file list & element counter
+			fileContainer.trigger('updateFileList');
 		}
 	}
 
 	function onSynchronize(topic, event) {
-		console.log(event);
+		// iterate over all elements the server sent
+		$.each(event[1], function() {
+
+			// only add elements from other clients
+			if (this.session != sess.sessionid()) {
+				onAdd('', this);
+			}
+		});
 	}
 
 	function onRemove(topic, event) {
-		console.log(event);
+		// only remove elements on other clients
+		if (event.session != sess.sessionid()) {
+
+			var file;
+			fileContainer.find('dd').each(function(i, element){
+				if ($(this).data('id') == event.id) {
+					file = $(this);
+				}
+			});
+
+			// remove file list entry
+			file.fadeOut('slow', '', function(){
+				file.remove();
+				fileContainer.trigger('updateFileList');
+			});
+
+			// remove element from surface
+			var element = $('#element-' + event.id);
+			if (element.length) {
+				element.fadeOut('slow', '', function(){
+					element.remove();
+				});
+			}
+		}
 	}
 
 
@@ -387,8 +423,28 @@ $(document).ready(function(){
 	};
 
 
-	function collectElements() {
-		return elementContainer.find('.image');
+	function collectElements(type) {
+		switch (type) {
+
+		case 'image':
+			return elementContainer.find('.image');
+			break;
+		case 'video':
+			return elementContainer.find('.video');
+			break;
+		case 'pdf':
+			return elementContainer.find('.pdf');
+			break;
+		case 'txt':
+			return elementContainer.find('.txt');
+			break;
+		case 'svg':
+			return elementContainer.find('.svg');
+			break;
+		default:
+			return elementContainer.find('div');
+			break;
+		}
 	};
 
 
@@ -400,21 +456,51 @@ $(document).ready(function(){
 
 
 	function removeFile(file) {
+		var id = file.data('id');
+		var name = file.find('.title').text();
+		var element = $('#element-' + id);
+
 		// remove file list entry
 		file.fadeOut('slow', '', function(){
 			file.remove();
 			fileContainer.trigger('updateFileList');
 		});
 
-		// remove element
-		$('#element-' + file.data('id')).fadeOut('slow', '', function(){
-			$(this).remove();
+		// remove element from surface
+		element.fadeOut('slow', '', function(){
+			element.remove();
 		});
 
 		/* publish 'remove item' if connected */
 		if (sess && sess._websocket_connected) {
-			publishRemove(file.data('id'));
+			sess.publish("remove", {
+				session: sess.sessionid(),
+				id: id,
+				name: name
+			}, true);
 		}
+	};
+
+
+	function addGestures(element) {
+		// make element dragable
+		element.draggable({
+			start: function() {
+				/* publish 'drag start' if connected */
+				if (sess && sess._websocket_connected) {
+					publishDragStart(element.attr('id'));
+				}
+			},
+			drag: function() {
+				/* publish current position if connected */
+				if (sess && sess._websocket_connected) {
+					var pos = element.position();
+					publishDrag(element.attr('id'), pos.left, pos.top);
+				}
+			},
+			containment: "parent",
+			stack: "#element-container .image"
+		});
 	};
 
 
@@ -425,6 +511,7 @@ $(document).ready(function(){
 		$('body').css('background-image', 'url(img/bg/background-' + bg + '.jpg)');
 	}).change();
 
+
 	getServer = function(){
 		var server = $('#bar').find('.server-ip');
 		if (server.val() != '') {
@@ -434,31 +521,4 @@ $(document).ready(function(){
 		}
 	}
 
-});
-
-// Window load event used just in case window height is dependant upon images
-$(window).bind("load", function() { 
-	var footerHeight = 0,
-		footerTop = 0,
-		$footer = $("#footer");
-
-	function positionFooter() {
-		footerHeight = $footer.height();
-		footerTop = ($(window).scrollTop()+$(window).height()-footerHeight)+"px";
-	
-		if ( ($(document.body).height()+footerHeight) < $(window).height()) {
-			$footer.css({
-				position: "absolute"
-			}).animate({
-				top: footerTop
-			});
-		} else {
-			$footer.css({
-				position: "static"
-			});
-		}
-	}
-
-	positionFooter();
-	$(window).scroll(positionFooter).resize(positionFooter);
 });

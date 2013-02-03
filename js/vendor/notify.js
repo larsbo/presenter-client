@@ -82,7 +82,7 @@
   };
 
   $.fn.notify.defaults = {
-    type: 'success',
+    type: 'default',
     closable: true,
     transition: 'fade',
     fadeOut: {

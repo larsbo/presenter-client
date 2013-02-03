@@ -14,12 +14,17 @@
 
 <div id="wrap">
   <div id="element-container">
+
 <!--
-    <div class="image" title="Bild-Titel und so" id="image1">
+    <div class="element video" title="Video-Titel" id="element-0">
+      <video src="videos/video.mp4" width="320" height="200" controls preload></video>
+    </div>
+
+    <div class="element image" title="Bild-Titel und so" id="element-1">
       <img src="bilder/fenster.jpg" width="400" />
     </div>
 
-    <div class="image" title="noch ein bild" id="image2">
+    <div class="element image" title="noch ein bild" id="element-2">
       <img src="bilder/elefant.jpg" width="300" />
     </div>
 -->
@@ -40,11 +45,14 @@
       <form id="disconnect-form" class="navbar-form pull-left" style="display:none;">
         <span class="navbar-text pull-left">
           <span class="status connected">
-            Verbunden zu:
+            Server:
           </span>
-          <span class="server-ip"></span>
-          als:
-          <input id="client-name" type="text" class="client-name" maxlength="16" />
+        <span class="server-ip"></span>
+        </span>
+        <div class="divider-vertical pull-left"></div>
+        <span class="navbar-text pull-left">
+          Teilnehmer:
+        <input id="client-name" type="text" class="client-name" maxlength="16" />
         </span>
         <button type="submit" class="btn btn-small pull-left btn-danger">
           <i class="icon-off"></i>
@@ -54,7 +62,7 @@
     </div>
   </div>
 
-  <div class="notifications top-right"></div>
+  <div id="notifications" class="notifications top-right"></div>
 
   <button id="toggle-button" type="button" class="btn btn-small">
     <i class="icon-chevron-up"></i>
@@ -86,7 +94,7 @@
   <form enctype="multipart/form-data" method="post" action="" id="fileupload">
   <div id="sidebar-right">
     <p>
-      <span id="upload-button" class="btn btn-block btn-primary">
+      <span id="upload-button" class="btn btn-block btn-success">
         <i class="icon-plus icon-white"></i>
         <span>Dateien hinzuf&uuml;gen</span>
         <input id="upload-input" type="file" multiple name="files[]">
@@ -128,6 +136,7 @@
 <script src="js/vendor/notify.js"></script>
 <script src="js/vendor/fileupload.js"></script>
 <script src="js/vendor/iframe-transport.js"></script>
+<script src="js/vendor/html5media.min.js"></script>
 
 <!--<script src="js/vendor/jquery.mobile-1.2.0.min.js"></script>-->
 <!--<script src="js/vendor/quo.js"></script>-->
