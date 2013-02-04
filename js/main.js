@@ -1,23 +1,5 @@
 var sess, msg, ip;
 
-// publish drag event
-function publishDrag(element, left, top) {
-	var data = {
-		el: element,
-		x: left,
-		y: top,
-		publisher: sess._session_id
-	};
-	sess.publish("drag", data, true);
-}
-
-// publish drag start event
-function publishDragStart(element) {
-	var data = { el: element };
-	sess.publish("drag-start", data, true);
-}
-
-
 $(document).ready(function(){
 
 	// disable drag scrolling in mobile browsers
@@ -44,27 +26,9 @@ $(document).ready(function(){
 	var removeFilesButton = $('#remove-files');
 
 	var elementContainer = $('#element-container');
-	var elementCounter = 0;
-
-	var images = elementContainer.find('.image');
-	var videos = elementContainer.find('.video');
-	var other = elementContainer.find('.other');
 
 	var backgroundChanger = $('#background-changer');
 
-	var fileRead = (function func1() {
-		var result;
-
-		$.ajax({
-			type: "GET",
-			url: file,
-			async: false,
-			success: function(data){
-				result = data;
-			}
-		});
-		return result;
-	})();
 
 	/*****  DRAG & DROP FILE UPLOAD  *****/
 	uploadInput.fileupload({
@@ -94,73 +58,10 @@ $(document).ready(function(){
 
 		done: function(e, data) {
 			$.each(data.result.files, function (index, file) {
-				//console.log(file);
 
-				// add element to file list
-				var type, image, content;
-				switch (file.type) {
-
-				case 'image/jpeg':
-				case 'image/png':
-				case 'image/gif':
-				case 'image/bmp':
-				case 'image/tiff':
-					type = 'image';
-					image = 'icon-picture';
-					content = '<img src="' + uploadDir + 'files/' + file.name + '" width="300" />';
-					break;
-
-				case 'video/mp4':
-				case 'video/ogv':
-				case 'video/webm':
-					type = 'video';
-					image = 'icon-film';
-					content = '<video src="' + uploadDir + 'files/' + file.name + '" width="320" height="200" controls preload></video>';
-					break;
-
-				case 'audio/mpeg':
-				case 'audio/ogg':
-					type = 'audio';
-					image = 'icon-volume-up';
-					content = '<audio src="' + uploadDir + 'files/' + file.name + '" controls preload></audio>';
-					break;
-
-				case 'application/pdf':
-					type = 'image';
-					image = 'icon-file';
-					content = file.name;
-					break;
-
-				case 'text/plain':
-					type = 'text';
-					image = 'icon-file-alt';
-
-					//var fileContent = $.get(uploadDir + 'files/' + file.name, function(data) {
-					//	var fileContent = data;
-					//});
-					var fileContent = fileRead(uploadDir + 'files/' + file.name);
-					break;
-					content = '<div class="notepaper">' + fileContent + '</div>';
-					console.log(content);
-			
-				default:
-					type = 'unknown';
-					image = 'icon-question-sign';
-					content = 'Unbekannter Datentyp.';
-				}
-
-				$('<dd data-id="' + elementCounter + '" class="clearfix"><i class="' + image + '"></i><span class="title">' + file.name + '</span><i class="icon-trash"></i></dd>').appendTo(fileContainer);
-
-				var el = $('<div class="element ' + type + '" title="' + file.name + '" id="element-' + elementCounter + '">' + content + '</div>');
-
-				// add element to surface
-				el.appendTo(elementContainer);
-
-				// make element draggable & resizeable
-				addGestures(el);
-
-				// update file list & element counter
-				fileContainer.trigger('updateFileList');
+				// append element to surface & file list
+				var position = appendElement(file);
+				console.log(position);
 
 				// remove upload message
 				data.context.hide();
@@ -170,7 +71,9 @@ $(document).ready(function(){
 					sess.publish("add", {
 						session: sess.sessionid(),
 						name: file.name,
-						path: uploadDir + 'files/'
+						type: file.type,
+						left: position.left,
+						top: position.top
 					}, true);
 				}
 			});
@@ -200,10 +103,7 @@ $(document).ready(function(){
 		removeFile($(this).parent());
 	})
 	.bind('updateFileList', function() {
-		// update element counter
-		elementCounter = fileContainer.find('dd').length;
-
-		if (elementCounter == 0) {
+		if (fileContainer.find('dd').length == 0) {
 			removeFilesButton.fadeOut();
 		} else {
 			removeFilesButton.fadeIn();
@@ -237,13 +137,24 @@ $(document).ready(function(){
 			sess.subscribe("remove", onRemove);
 			sess.subscribe("synchronize", onSynchronize);
 
-			// publish session id & current elements on connect
+			// publish session id
 			sess.publish("connect", {
-				session: sess.sessionid(),
-				elements: getIDs(collectElements())
+				session: sess.sessionid()
 			});
 
-			//console.log('client: ' + sess._session_id);
+			// publish current elements
+			var elements = getElements();
+			$.each(elements, function() {
+				var position = $(this).position();
+				sess.publish("add", {
+					session: sess.sessionid(),
+					name: this.name,
+					type: this.type,
+					left: position.left,
+					top: position.top
+				}, true);
+			});
+
 			notifyContainer.notify({ message: { text: 'Verbindung hergestellt!' } }).show();
 
 			// modify layout
@@ -288,7 +199,7 @@ $(document).ready(function(){
 					if (!$('#client-' + client).length) {
 						if (session == sess.sessionid()) {
 							// this client
-							var entry = $('<dd id="client-' + client + '" data-session="' + session + '" class="current"><i class="icon-user"></i> <span>' + session + '</span></dd>');
+							var entry = $('<dd id="client-' + client + '" data-session="' + session + '" class="text-info"><i class="icon-user"></i> <span>' + session + '</span></dd>');
 						} else {
 							var entry = $('<dd id="client-' + client + '" data-session="' + session + '"><i class="icon-user"></i> <span>' + session + '</span></dd>');
 						}
@@ -333,31 +244,19 @@ $(document).ready(function(){
 
 	// added new media element
 	function onAdd(topic, element) {
+
+		// only add elements from other clients
 		if (element.session != sess.sessionid()) {
-
-			// add element to file list
-			$('<dd data-id="' + elementCounter + '" class="clearfix"><i class="icon-picture"></i><span class="title">' + element.name + '</span><i class="icon-trash"></i></dd>').appendTo(fileContainer);
-
-			var el = $('<div class="image" title="' + element.name + '" id="element-' + elementCounter + '"><img src="' + element.path + element.name + '" width="300" /></div>');
-
-			// add element to surface
-			el.appendTo(elementContainer);
-
-			// make element draggable & resizeable
-			addGestures(el);
-
-			// update file list & element counter
-			fileContainer.trigger('updateFileList');
+			appendElement(element);
 		}
 	}
 
 	function onSynchronize(topic, event) {
-		// iterate over all elements the server sent
+		// iterate over all elements got from server
 		$.each(event[1], function() {
 
-			// only add elements from other clients
 			if (this.session != sess.sessionid()) {
-				onAdd('', this);
+				appendElement(this);
 			}
 		});
 	}
@@ -441,35 +340,99 @@ $(document).ready(function(){
 	};
 
 
-	function collectElements(type) {
-		switch (type) {
-
-		case 'image':
-			return elementContainer.find('.image');
-			break;
-		case 'video':
-			return elementContainer.find('.video');
-			break;
-		case 'pdf':
-			return elementContainer.find('.pdf');
-			break;
-		case 'txt':
-			return elementContainer.find('.txt');
-			break;
-		case 'svg':
-			return elementContainer.find('.svg');
-			break;
-		default:
-			return elementContainer.find('div');
-			break;
-		}
-	};
-
-
-	function getIDs(array) {
-		return $.map(array, function(n, i){
-			return n.id;
+	function getElements() {
+		var files = [];
+		elementContainer.find('.element').each(function(i, element) {
+			var file = {
+				name: $(element).prop('title'),
+				type: $(element).data('type')
+			}
+			files.push(file);
 		});
+		return files;
+	}
+
+
+	function appendElement(file) {
+		// generate unique id by hash of file name
+		var id = md5(file.name);
+
+		// abort if element already exists
+		if ($('#element-' + id).length) {
+			return $('#element-' + id).position();
+		}
+
+		var type, image, content;
+
+		switch (file.type) {
+
+		case 'image/jpeg':
+		case 'image/png':
+		case 'image/gif':
+		case 'image/bmp':
+		case 'image/tiff':
+			type = 'image';
+			image = 'icon-picture';
+			content = '<img src="' + uploadDir + 'files/' + file.name + '" width="300" />';
+			break;
+
+		case 'video/mp4':
+		case 'video/ogv':
+		case 'video/webm':
+			type = 'video';
+			image = 'icon-film';
+			content = '<video src="' + uploadDir + 'files/' + file.name + '" width="320" height="200" controls preload></video>';
+			break;
+
+		case 'audio/mpeg':
+		case 'audio/ogg':
+			type = 'audio';
+			image = 'icon-volume-up';
+			content = '<audio src="' + uploadDir + 'files/' + file.name + '" controls preload></audio>';
+			break;
+
+		case 'application/pdf':
+			type = 'image';
+			image = 'icon-file';
+			content = file.name;
+			break;
+
+		case 'text/plain':
+		case 'text/html':
+			type = 'text';
+			image = 'icon-file-alt';
+			content = '';
+			break;
+
+		default:
+			type = 'unknown';
+			image = 'icon-question-sign';
+			content = '<i class="icon-question-sign"></i> Unbekannter Datentyp.<br>';
+		}
+
+		// add element to file list
+		$('<dd data-id="' + id + '" class="clearfix"><i class="' + image + '"></i><span class="title">' + file.name + '</span><i class="icon-trash"></i></dd>').appendTo(fileContainer);
+
+		// add element to surface
+		var element = $('<div class="element ' + type + '" title="' + file.name + '" id="element-' + id + '" data-type="' + file.type + '">' + content + '</div>');
+		var target = element.appendTo(elementContainer);
+
+		if (type == 'text') {
+			$.get(uploadDir + 'files/' + file.name, function(data) {
+				if (data.length > 1000) {
+					data = data.substring(0, 1000) + '...';
+				}
+				target.html(data.replace('\n', '<br>') + '<br><br><b>' + file.name + '</b>');
+			});
+		}
+
+		// make element draggable & resizeable
+		addGestures(element);
+
+		// update file list & element counter
+		fileContainer.trigger('updateFileList');
+
+		return element.position();
 	};
 
 
@@ -506,14 +469,31 @@ $(document).ready(function(){
 			start: function() {
 				/* publish 'drag start' if connected */
 				if (sess && sess._websocket_connected) {
-					publishDragStart(element.attr('id'));
+					sess.publish("drag-start", { el: element.attr('id') }, true);
 				}
 			},
 			drag: function() {
 				/* publish current position if connected */
 				if (sess && sess._websocket_connected) {
 					var pos = element.position();
-					publishDrag(element.attr('id'), pos.left, pos.top);
+					sess.publish("drag", {
+						el: element.attr('id'),
+						x: pos.left,
+						y: pos.top,
+						publisher: sess.sessionid()
+					}, true);
+				}
+			},
+			stop: function() {
+				/* publish current position if connected */
+				if (sess && sess._websocket_connected) {
+					var pos = element.position();
+					sess.publish("drag-end", {
+						el: element.attr('id'),
+						x: pos.left,
+						y: pos.top,
+						publisher: sess.sessionid()
+					}, true);
 				}
 			},
 			containment: "parent",
