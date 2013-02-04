@@ -61,7 +61,6 @@ $(document).ready(function(){
 
 				// append element to surface & file list
 				var position = appendElement(file);
-				console.log(position);
 
 				// remove upload message
 				data.context.hide();
@@ -123,10 +122,10 @@ $(document).ready(function(){
 	function connect(server){
 		var url = "ws://" + server + ":8080";
 		ab.connect(url, function(session){
-	
+
 			// create session
 			sess = session;
-	
+
 			// subscribe to topic, providing an event handler
 			sess.subscribe("connect", onConnect);
 			sess.subscribe("disconnect", onDisconnect);
@@ -145,16 +144,17 @@ $(document).ready(function(){
 			// publish current elements
 			var elements = getElements();
 			$.each(elements, function() {
-				var position = $(this).position();
+				//console.log(this);
 				sess.publish("add", {
 					session: sess.sessionid(),
 					name: this.name,
 					type: this.type,
-					left: position.left,
-					top: position.top
+					left: this.left,
+					top: this.top
 				}, true);
 			});
 
+			// show message
 			notifyContainer.notify({ message: { text: 'Verbindung hergestellt!' } }).show();
 
 			// modify layout
@@ -185,7 +185,6 @@ $(document).ready(function(){
 		sidebarLeft.slideUp('slow');
 		clientContainer.html('');
 	};
-
 
 
 
@@ -332,10 +331,12 @@ $(document).ready(function(){
 	function changePosition(data) {
 		var el = $('#' + data.el);
 		if (el.length) {
-			el.offset({
+			el
+			.offset({
 				left: data.x,
 				top: data.y
 			})
+			.css('z-index', data.index);
 		}
 	};
 
@@ -343,9 +344,12 @@ $(document).ready(function(){
 	function getElements() {
 		var files = [];
 		elementContainer.find('.element').each(function(i, element) {
+			var position = $(element).offset();
 			var file = {
 				name: $(element).prop('title'),
-				type: $(element).data('type')
+				type: $(element).data('type'),
+				left: position.left,
+				top: position.top
 			}
 			files.push(file);
 		});
@@ -356,13 +360,13 @@ $(document).ready(function(){
 	function appendElement(file) {
 		// generate unique id by hash of file name
 		var id = md5(file.name);
+		var type, image, content;
 
 		// abort if element already exists
 		if ($('#element-' + id).length) {
+			//console.log(id + ' already exists');
 			return $('#element-' + id).position();
 		}
-
-		var type, image, content;
 
 		switch (file.type) {
 
@@ -415,7 +419,11 @@ $(document).ready(function(){
 
 		// add element to surface
 		var element = $('<div class="element ' + type + '" title="' + file.name + '" id="element-' + id + '" data-type="' + file.type + '">' + content + '</div>');
-		var target = element.appendTo(elementContainer);
+
+		var target = element.appendTo(elementContainer).offset({
+			left: file.left,
+			top: file.top
+		});
 
 		if (type == 'text') {
 			$.get(uploadDir + 'files/' + file.name, function(data) {
@@ -432,7 +440,7 @@ $(document).ready(function(){
 		// update file list & element counter
 		fileContainer.trigger('updateFileList');
 
-		return element.position();
+		return element.offset();
 	};
 
 
@@ -475,11 +483,12 @@ $(document).ready(function(){
 			drag: function() {
 				/* publish current position if connected */
 				if (sess && sess._websocket_connected) {
-					var pos = element.position();
+					var position = element.offset();
 					sess.publish("drag", {
 						el: element.attr('id'),
-						x: pos.left,
-						y: pos.top,
+						x: position.left,
+						y: position.top,
+						index: element.css('zIndex'),
 						publisher: sess.sessionid()
 					}, true);
 				}
@@ -487,11 +496,11 @@ $(document).ready(function(){
 			stop: function() {
 				/* publish current position if connected */
 				if (sess && sess._websocket_connected) {
-					var pos = element.position();
+					var position = element.offset();
 					sess.publish("drag-end", {
 						el: element.attr('id'),
-						x: pos.left,
-						y: pos.top,
+						x: position.left,
+						y: position.top,
 						publisher: sess.sessionid()
 					}, true);
 				}
