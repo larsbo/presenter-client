@@ -52,7 +52,19 @@ $(document).ready(function(){
 
 	var backgroundChanger = $('#background-changer');
 
+	var fileRead = (function func1() {
+		var result;
 
+		$.ajax({
+			type: "GET",
+			url: file,
+			async: false,
+			success: function(data){
+				result = data;
+			}
+		});
+		return result;
+	})();
 
 	/*****  DRAG & DROP FILE UPLOAD  *****/
 	uploadInput.fileupload({
@@ -82,7 +94,7 @@ $(document).ready(function(){
 
 		done: function(e, data) {
 			$.each(data.result.files, function (index, file) {
-				console.log(file);
+				//console.log(file);
 
 				// add element to file list
 				var type, image, content;
@@ -122,9 +134,15 @@ $(document).ready(function(){
 				case 'text/plain':
 					type = 'text';
 					image = 'icon-file-alt';
-					content = file.name;
+
+					//var fileContent = $.get(uploadDir + 'files/' + file.name, function(data) {
+					//	var fileContent = data;
+					//});
+					var fileContent = fileRead(uploadDir + 'files/' + file.name);
 					break;
-				
+					content = '<div class="notepaper">' + fileContent + '</div>';
+					console.log(content);
+			
 				default:
 					type = 'unknown';
 					image = 'icon-question-sign';
