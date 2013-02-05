@@ -7,7 +7,6 @@ $(document).ready(function(){
 		event.preventDefault();
 	}, false);
 
-
 	var uploadDir = 'http://localhost/PresenterServer/upload/';
 
 	var bar = $('#bar');
@@ -129,7 +128,7 @@ $(document).ready(function(){
 			// subscribe to topic, providing an event handler
 			sess.subscribe("connect", onConnect);
 			sess.subscribe("disconnect", onDisconnect);
-			sess.subscribe("changeName", onChangeName);
+			sess.subscribe("change-name", onChangeName);
 			sess.subscribe("drag", onDrag);
 			sess.subscribe("drag-start", onDragStart);
 			sess.subscribe("add", onAdd);
@@ -222,11 +221,14 @@ $(document).ready(function(){
 	}
 
 	function onChangeName(topic, event) {
-		clientContainer.find('dd').each(function(i, el){
-			if ($(el).data('session') == event.session) {
-				$(el).find('span').text(event.name);
-			}
-		});
+		if ($.isArray(event)) {
+			// broadcast
+				$.each(event[1], function(session, name) {
+					updateName(session, name);
+				});
+		} else {
+			updateName(event.session, event.name);
+		}
 	}
 
 	function onDrag(topic, event) {
@@ -253,6 +255,7 @@ $(document).ready(function(){
 	function onSynchronize(topic, event) {
 		// iterate over all elements got from server
 		$.each(event[1], function() {
+			//console.log(this);
 
 			if (this.session != sess.sessionid()) {
 				appendElement(this);
@@ -319,7 +322,7 @@ $(document).ready(function(){
 			// disable Enter key
 			return false;
 		} else {
-			sess.publish("changeName", {
+			sess.publish("change-name", {
 				session: sess.sessionid(),
 				name: clientName.val()
 			});
@@ -356,6 +359,13 @@ $(document).ready(function(){
 		return files;
 	}
 
+	function updateName(session, name) {
+		clientContainer.find('dd').each(function(i, element) {
+			if ($(element).data('session') == session) {
+				$(element).find('span').text(name);
+			}
+		});
+	}
 
 	function appendElement(file) {
 		// generate unique id by hash of file name
@@ -364,8 +374,7 @@ $(document).ready(function(){
 
 		// abort if element already exists
 		if ($('#element-' + id).length) {
-			//console.log(id + ' already exists');
-			return $('#element-' + id).position();
+			return $('#element-' + id).offset();
 		}
 
 		switch (file.type) {
@@ -477,7 +486,7 @@ $(document).ready(function(){
 			start: function() {
 				/* publish 'drag start' if connected */
 				if (sess && sess._websocket_connected) {
-					sess.publish("drag-start", { el: element.attr('id') }, true);
+					sess.publish("drag-start", { el: element.prop('id') }, true);
 				}
 			},
 			drag: function() {
@@ -485,7 +494,7 @@ $(document).ready(function(){
 				if (sess && sess._websocket_connected) {
 					var position = element.offset();
 					sess.publish("drag", {
-						el: element.attr('id'),
+						el: element.prop('id'),
 						x: position.left,
 						y: position.top,
 						index: element.css('zIndex'),
@@ -498,17 +507,23 @@ $(document).ready(function(){
 				if (sess && sess._websocket_connected) {
 					var position = element.offset();
 					sess.publish("drag-end", {
-						el: element.attr('id'),
-						x: position.left,
-						y: position.top,
+						name: element.prop('title'),
+						left: position.left,
+						top: position.top,
 						publisher: sess.sessionid()
 					}, true);
 				}
 			},
 			containment: "parent",
-			stack: "#element-container .image"
+			stack: "#element-container .element",
+			scroll: false
 		});
 	};
+
+	// set element container's height
+	$(window).resize(function() {
+		elementContainer.css('height', $(document.body).height() - 57);
+	}).resize();
 
 
 	/*****  background changer  *****/

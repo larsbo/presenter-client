@@ -7,7 +7,6 @@ body {
   -ms-touch-action: none;
   background-image: url("../img/bg/background-1.jpg");
   background-repeat: no-repeat;
-  margin-top: 20px;
   color: #fff;
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5); }
 
@@ -16,18 +15,7 @@ body {
   min-height: 100%;
   height: auto !important;
   height: 100%;
-  margin: 0 auto -50px; }
-
-#push, #footer {
-  height: 30px; }
-
-#footer {
-  background-color: rgba(0, 0, 0, 0.5);
-  line-height: 30px;
-  z-index: 10; }
-  #footer .muted {
-    font-size: 12px;
-    padding: 0 10px; }
+  margin: 0 auto; }
 
 #toggle-button {
   position: absolute;
@@ -58,16 +46,19 @@ body {
     margin: 10px; }
 
 #element-container {
-  height: 95%;
+  height: 100%;
   left: 0;
-  margin: 3% -0.5% 5% -0.5%;
+  margin: 37px 0 0 -14px;
   overflow: hidden;
-  padding-top: 25px;
+  padding: 10px;
   position: absolute;
   top: 0;
   width: 100%; }
   #element-container img {
     position: relative; }
+
+#about {
+  display: none; }
 
 /*****  BOOTSTRAP  *****/
 a:focus, .btn:focus {
@@ -196,7 +187,7 @@ a:focus, .btn:focus {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   float: left;
   display: inline;
-  margin: 0 15px 30px;
+  margin: 0 15px 15px;
   min-width: 5%;
   max-width: 25%;
   padding: 10px 10px 25px;
