@@ -1,0 +1,11 @@
+		|			Desktop				|				Mobile
+________________|_______________________________________________________|___________________________________________________________________________________
+		|	Mozilla		Google		Microsoft	|	Apple		Google		Microsoft	Blackberry	Opera		Nokia
+		|	Firefox 18	Chrome 24	IE 10		|	Safari		Android		IE Mobile			Opera Mobile	N9
+________________|_______________________________________________________|__________________________________________________________________________________________________
+mouse drag	|	jquery-ui	jquery-ui	jquery-ui	|	-		-		-		-		-		-
+touch drag	|	jquery-ui	touch punch	jquery-ui	|									touch punch	touch punch
+multitouch drag	|	ja		ja		nein		|	
+mouse zoom	|	jquery-ui?	jquery-ui?	jquery-ui?	|
+touch zoom	|	?		?		?		|
+
