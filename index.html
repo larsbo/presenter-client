@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="css/font-awesome.min.css">
   <link rel="stylesheet" href="css/stylesheet.css">
   <script src="js/vendor/modernizr.min.js"></script>
+  <script src="http://use.edgefonts.net/sansita-one.js"></script>
 </head>
 <body>
 
@@ -46,10 +47,28 @@
         </span>
         <div class="divider-vertical pull-left"></div>
         <span class="navbar-text pull-left">
-          Teilnehmer:
+          Name:
         <input id="client-name" type="text" class="client-name" maxlength="16" />
         </span>
-        <button type="submit" class="btn btn-small pull-left btn-danger">
+        <span class="navbar-text pull-left">
+          Farbe:
+          <select name="colorpicker" id="colorpicker">
+            <option value="#515151">Gray</option>
+            <option value="#7bd148">Green</option>
+            <option value="#5484ed">Bold blue</option>
+            <option value="#a4bdfc">Blue</option>
+            <option value="#46d6db">Turquoise</option>
+            <option value="#7ae7bf">Light green</option>
+            <option value="#51b749">Bold green</option>
+            <option value="#fbd75b">Yellow</option>
+            <option value="#ffb878">Orange</option>
+            <option value="#ff887c">Red</option>
+            <option value="#dc2127">Bold red</option>
+            <option value="#dbadff">Purple</option>
+          </select>
+        </span>
+        <div class="divider-vertical pull-left"></div>
+        <button type="submit" class="btn btn-small pull-right btn-danger">
           <i class="icon-off"></i>
           Verbindung trennen
         </button>
@@ -59,9 +78,14 @@
 
   <div id="notifications" class="notifications top-right"></div>
 
-  <button id="toggle-button" type="button" class="btn btn-small">
-    <i class="icon-chevron-up"></i>
-  </button>
+  <div id="button-container">
+    <button id="toggle-bar" type="button" class="btn btn-small">
+      <i class="icon-chevron-up"></i>
+    </button>
+    <button id="toggle-about" type="button" class="btn btn-small" data-toggle="modal" href="#about">
+      <i class="icon-info-sign"></i>
+    </button>
+  </div>
 
   <div id="background-changer-container">
     <select id="background-changer">
@@ -75,16 +99,15 @@
       <option data-img-src="img/bg/background-8.jpg" value="8">Hintergrund 8</option>
       <option data-img-src="img/bg/background-9.jpg" value="9">Hintergrund 9</option>
     </select>
-    <p>
-      <button id="btn" class="btn btn-large">Hello world!</button>
-    </p>
   </div>
 
+<!--
   <div id="sidebar-left" class="clients">
     <h4>Teilnehmer:</h4>
     <dl id="client-container">
     </dl>
   </div>
+-->
 
   <form enctype="multipart/form-data" method="post" action="" id="fileupload">
   <div id="sidebar-right">
@@ -105,32 +128,64 @@
     </p>
   </div>
   </form>
-</div>
 
-<div id="about">
-  <h3>Presenter v0.1</h3>
-  <p>&copy; 2013 Lars Borchert borchert.lars@gmail.com</p>
-  <p>Multitouch App for collaborative working with media files powered by</p>
-  <ul>
-    <li><a href="http;//jquery.com">jquery</a></li>
-    <li><a href="http://twitter.github.com/bootstrap">bootstrap</a></li>
-    <li><a href="http://nodejs.org">node.js</a></li>
-    <li><a href="http://socketo.me">Ratchet</a></li>
-    <li><a href="http://autobahn.ws">Autobahn.ws</a></li>
-  </ul>
-</div>
+  <div id="client-container"></div>
 
+  <div id="trash" rel="tooltip" title="Element hier ablegen, um es zu l&ouml;schen">
+    <i class="icon-trash"></i>
+  </div>
+
+  <div id="about" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+      <h3>Presenter v0.1</h3>
+    </div>
+    <div class="modal-body">
+      <p>Multitouch App for collaborative working with media files powered by</p>
+      <ul class="icons">
+        <li>
+          <i class="icon-ok"></i>
+          <a target="_blank" href="http://jquery.com">jquery</a>
+        </li>
+        <li>
+          <i class="icon-ok"></i>
+          <a target="_blank" href="http://twitter.github.com/bootstrap">bootstrap</a></li>
+        <li>
+          <i class="icon-ok"></i>
+          <a target="_blank" href="http://nodejs.org">node.js</a>
+        </li>
+        <li>
+          <i class="icon-ok"></i>
+          <a target="_blank" href="http://socketo.me">Ratchet</a>
+        </li>
+        <li>
+          <i class="icon-ok"></i>
+          <a target="_blank" href="http://autobahn.ws">Autobahn.ws</a>
+        </li>
+      </ul>
+    </div>
+    <div class="modal-footer">
+      <small class="pull-left a-left">
+        &copy; <a href="mailto:borchert.lars@gmail.com">2013 Lars Borchert</a>
+      </small>
+      <button class="btn" data-dismiss="modal" aria-hidden="true">Schlie&szlig;en</button>
+    </div>
+  </div>
+
+</div>
 <script src="js/vendor/jquery-1.9.0.min.js"></script>
 <script src="js/vendor/jquery-ui-1.10.0.custom.min.js"></script>
 <script src="js/vendor/jquery.ui.touch-punch.min.js"></script>
 <script src="js/vendor/bootstrap.min.js"></script>
+
 <script src="js/vendor/autobahn.min.js"></script>
 <script src="js/vendor/image-picker.js"></script>
+<script src="js/vendor/simplecolorpicker.js"></script>
 <script src="js/vendor/notify.js"></script>
+<script src="js/vendor/md5.js"></script>
 <script src="js/vendor/fileupload.js"></script>
 <script src="js/vendor/iframe-transport.js"></script>
 <script src="js/vendor/html5media.min.js"></script>
-<script src="js/vendor/md5.js"></script>
 
 <!--<script src="js/vendor/jquery.mobile-1.2.0.min.js"></script>-->
 <!--<script src="js/vendor/quo.js"></script>-->

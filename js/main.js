@@ -7,26 +7,27 @@ $(document).ready(function(){
 		event.preventDefault();
 	}, false);
 
+
 	var uploadDir = 'http://localhost/PresenterServer/upload/';
 
 	var bar = $('#bar');
 	var connectForm = $('#connect-form');
 	var disconnectForm = $('#disconnect-form');
 	var clientName = $('#client-name');
-	var toggleButton = $('#toggle-button');
+
+	var toggleBar = $('#toggle-bar');
+	var toggleAbout = $('#toggle-about');
 
 	var notifyContainer = $('#notifications');
-
-	var sidebarLeft = $('#sidebar-left');
 	var clientContainer = $('#client-container');
+	var elementContainer = $('#element-container');
 
 	var fileContainer = $('#file-container');
 	var uploadInput = $('#upload-input');
 	var removeFilesButton = $('#remove-files');
 
-	var elementContainer = $('#element-container');
-
 	var backgroundChanger = $('#background-changer');
+	var colorPicker = $('#colorpicker');
 
 
 	/*****  DRAG & DROP FILE UPLOAD  *****/
@@ -97,7 +98,7 @@ $(document).ready(function(){
 			$('#element-' + el.data('id')).addClass('active');
 		}
 	})
-	.on('click', '.icon-trash', function(event) {
+	.on('click', 'button', function(event) {
 		removeFile($(this).parent());
 	})
 	.bind('updateFileList', function() {
@@ -129,6 +130,7 @@ $(document).ready(function(){
 			sess.subscribe("connect", onConnect);
 			sess.subscribe("disconnect", onDisconnect);
 			sess.subscribe("change-name", onChangeName);
+			sess.subscribe("change-color", onChangeColor);
 			sess.subscribe("drag", onDrag);
 			sess.subscribe("drag-start", onDragStart);
 			sess.subscribe("add", onAdd);
@@ -161,7 +163,8 @@ $(document).ready(function(){
 			disconnectForm.show();
 			disconnectForm.find('.server-ip').text(server);
 			disconnectForm.find('.client-name').val(sess.sessionid());
-			sidebarLeft.slideDown('slow');
+			clientContainer.fadeIn('slow');
+			colorPicker.trigger('change');
 
 		},
 
@@ -181,7 +184,7 @@ $(document).ready(function(){
 		// reset layout
 		connectForm.show().find('button').button('reset');
 		disconnectForm.hide().find('.server-ip').html('');
-		sidebarLeft.slideUp('slow');
+		clientContainer.fadeOut('slow');
 		clientContainer.html('');
 	};
 
@@ -195,12 +198,12 @@ $(document).ready(function(){
 				$.each(this, function(client, session) {
 					// add connected client to list
 					if (!$('#client-' + client).length) {
+						var current = '';
 						if (session == sess.sessionid()) {
 							// this client
-							var entry = $('<dd id="client-' + client + '" data-session="' + session + '" class="text-info"><i class="icon-user"></i> <span>' + session + '</span></dd>');
-						} else {
-							var entry = $('<dd id="client-' + client + '" data-session="' + session + '"><i class="icon-user"></i> <span>' + session + '</span></dd>');
+							current = ' current';
 						}
+						var entry = $('<div id="client-' + client + '" class="client' + current + '" data-session="' + session + '"><img class="circle" src="http://cl.busb.org/L79J/dj.png" /><div class="name">' + session + '</div></div>');
 						entry.hide().appendTo(clientContainer).fadeIn();
 					}
 				});
@@ -231,32 +234,37 @@ $(document).ready(function(){
 		}
 	}
 
+	function onChangeColor(topic, event) {
+		if ($.isArray(event)) {
+			// broadcast
+				$.each(event[1], function(session, color) {
+					updateColor(session, name);
+				});
+		} else {
+			updateColor(event.session, event.color);
+		}
+	}
+
 	function onDrag(topic, event) {
-		if (event.publisher != sess.sessionid()) {
+		if (event.session != sess.sessionid()) {
 			changePosition(event);
 		}
 	}
 
 	function onDragStart(topic, event) {
-		if (event.publisher != sess.sessionid()) {
+		if (event.session != sess.sessionid()) {
 			notifyContainer.notify({ message: { text: 'Bewege ' + event.el } }).show();
 		}
 	}
 
-	// added new media element
 	function onAdd(topic, element) {
-
-		// only add elements from other clients
 		if (element.session != sess.sessionid()) {
 			appendElement(element);
 		}
 	}
 
 	function onSynchronize(topic, event) {
-		// iterate over all elements got from server
 		$.each(event[1], function() {
-			//console.log(this);
-
 			if (this.session != sess.sessionid()) {
 				appendElement(this);
 			}
@@ -264,9 +272,7 @@ $(document).ready(function(){
 	}
 
 	function onRemove(topic, event) {
-		// only remove elements on other clients
 		if (event.session != sess.sessionid()) {
-
 			var file;
 			fileContainer.find('dd').each(function(i, element){
 				if ($(this).data('id') == event.id) {
@@ -309,9 +315,9 @@ $(document).ready(function(){
 
 
 	/*****  TOGGLE CONNECT-DISCONNECT BAR  *****/
-	toggleButton.click(function(){
+	toggleBar.click(function(){
 		bar.slideToggle();
-		toggleButton.find('i').toggleClass('icon-chevron-up icon-chevron-down');
+		toggleBar.find('i').toggleClass('icon-chevron-up icon-chevron-down');
 	});
 
 
@@ -360,9 +366,23 @@ $(document).ready(function(){
 	}
 
 	function updateName(session, name) {
-		clientContainer.find('dd').each(function(i, element) {
+		clientContainer.find('.client').each(function(i, element) {
 			if ($(element).data('session') == session) {
-				$(element).find('span').text(name);
+				$(element).find('.name').text(name);
+			}
+		});
+	}
+
+	function updateColor(session, color) {
+		clientContainer.find('.client').each(function(i, element) {
+			if ($(element).data('session') == session) {
+				$(element).find('.circle').css({
+					'background-color': color,
+					'box-shadow': '0 0 0 5px ' + color
+				});
+				clientName.css({
+					'background-color': color
+				});
 			}
 		});
 	}
@@ -424,7 +444,7 @@ $(document).ready(function(){
 		}
 
 		// add element to file list
-		$('<dd data-id="' + id + '" class="clearfix"><i class="' + image + '"></i><span class="title">' + file.name + '</span><i class="icon-trash"></i></dd>').appendTo(fileContainer);
+		$('<dd data-id="' + id + '" class="clearfix"><i class="' + image + '"></i><span class="title">' + file.name + '</span><button type="button" class="btn btn-mini btn-danger" title="entfernen"><i class="icon-remove"></i></button></dd>').appendTo(fileContainer);
 
 		// add element to surface
 		var element = $('<div class="element ' + type + '" title="' + file.name + '" id="element-' + id + '" data-type="' + file.type + '">' + content + '</div>');
@@ -494,11 +514,11 @@ $(document).ready(function(){
 				if (sess && sess._websocket_connected) {
 					var position = element.offset();
 					sess.publish("drag", {
+						session: sess.sessionid(),
 						el: element.prop('id'),
 						x: position.left,
 						y: position.top,
-						index: element.css('zIndex'),
-						publisher: sess.sessionid()
+						index: element.css('zIndex')
 					}, true);
 				}
 			},
@@ -507,10 +527,10 @@ $(document).ready(function(){
 				if (sess && sess._websocket_connected) {
 					var position = element.offset();
 					sess.publish("drag-end", {
+						session: sess.sessionid(),
 						name: element.prop('title'),
 						left: position.left,
-						top: position.top,
-						publisher: sess.sessionid()
+						top: position.top
 					}, true);
 				}
 			},
@@ -524,6 +544,24 @@ $(document).ready(function(){
 	$(window).resize(function() {
 		elementContainer.css('height', $(document.body).height() - 57);
 	}).resize();
+
+
+	/*****  INIT OTHER PLUGINS  *****/
+	$('#trash').tooltip({ placement: 'left' });
+
+	colorPicker
+	.on('click', function() {
+		colorPicker.simplecolorpicker({picker: true});
+	})
+	.change(function() {
+		sess.publish("change-color", {
+			session: sess.sessionid(),
+			color: colorPicker.val()
+		}, true);
+	})
+	.trigger('click');
+
+
 
 
 	/*****  background changer  *****/

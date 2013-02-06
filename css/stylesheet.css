@@ -1,3 +1,4 @@
+@import url(http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz:400,700);
 html, body {
   height: 100%; }
 
@@ -6,9 +7,7 @@ body {
   -ms-content-zooming: none;
   -ms-touch-action: none;
   background-image: url("../img/bg/background-1.jpg");
-  background-repeat: no-repeat;
-  color: #fff;
-  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5); }
+  background-repeat: no-repeat; }
 
 /*****  LAYOUT  *****/
 #wrap {
@@ -17,33 +16,34 @@ body {
   height: 100%;
   margin: 0 auto; }
 
-#toggle-button {
+#button-container {
+  color: #fff;
   position: absolute;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
   top: 5px;
   right: 10px;
   z-index: 1050; }
 
-#sidebar-left {
-  background-color: rgba(0, 0, 0, 0.2);
-  display: none;
-  font-size: 12px;
-  left: 0;
-  padding-top: 36px;
-  position: absolute;
-  width: 128px;
-  top: 0; }
-  #sidebar-left p {
-    margin: 5px; }
-
 #sidebar-right {
   background-color: rgba(0, 0, 0, 0.2);
+  color: #fff;
   font-size: 12px;
   right: 0;
   position: absolute;
   min-width: 220px;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
   top: 20%; }
   #sidebar-right p {
     margin: 10px; }
+
+#client-container {
+  color: #fff;
+  display: none;
+  font-family: "Yanone Kaffeesatz";
+  left: 20px;
+  position: absolute;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+  top: 60px; }
 
 #element-container {
   height: 100%;
@@ -57,15 +57,48 @@ body {
   #element-container img {
     position: relative; }
 
-#about {
-  display: none; }
+#trash {
+  background-color: rgba(0, 0, 0, 0.5);
+  border-top-left-radius: 100px;
+  bottom: -50px;
+  cursor: help;
+  opacity: 0.4;
+  padding: 45px 52px;
+  position: absolute;
+  right: -50px;
+  -webkit-transition: linear 200ms;
+  -moz-transition: linear 200ms;
+  -o-transition: linear 200ms;
+  transition: linear 200ms; }
+  #trash:hover {
+    bottom: -55px;
+    opacity: 0.8;
+    padding: 55px 62px;
+    right: -55px;
+    transform: scale(1.2); }
+  #trash i {
+    bottom: 10px;
+    color: #fff;
+    font-size: 50px;
+    position: relative;
+    right: 10px;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5); }
 
 /*****  BOOTSTRAP  *****/
 a:focus, .btn:focus {
   outline: none; }
 
 .navbar .brand {
-  padding: 8px 20px; }
+  font-family: sansita-one, serif;
+  font-size: 28px;
+  padding: 8px 8px 8px 30px;
+  transition: linear 300ms; }
+  .navbar .brand:hover {
+    color: #fff;
+    left: 1px;
+    position: relative;
+    top: 1px;
+    text-shadow: -1px -1px 0 rgba(0, 0, 0, 0.5); }
 .navbar .divider-vertical {
   height: 36px; }
 
@@ -110,31 +143,40 @@ a:focus, .btn:focus {
   font-weight: bold; }
 
 .client-name {
-  background-color: rgba(0, 0, 0, 0.1) !important;
   border-radius: 4px;
   -webkit-box-shadow: 0 1px 0 white, 0 1px 3px 0 rgba(0, 0, 0, 0.3) inset !important;
   box-shadow: 0 1px 0 white, 0 1px 3px 0 rgba(0, 0, 0, 0.3) inset !important;
-  color: #777777 !important;
+  color: white !important;
   display: inline-block;
   font-style: italic;
   height: 16px !important;
   margin: -1px 5px 0 !important;
   padding: 3px !important;
-  text-shadow: 0 1px 1px white;
+  text-shadow: 0 1px 1px black !important;
   width: 150px !important; }
   .client-name:focus {
-    background-color: white !important;
-    color: #0033ff !important; }
+    background-color: #999999 !important; }
 
 /*****  CLIENTS SIDEBAR  *****/
-.clients dl {
-  margin-bottom: 10px; }
-  .clients dl .current {
-    color: #03f;
-    font-weight: bold; }
-.clients h4 {
-  font-size: 16px;
-  padding-left: 10px; }
+.client {
+  margin-bottom: 20px; }
+  .client .circle {
+    background-color: white;
+    box-shadow: 0 0 0 5px white;
+    border-radius: 50%;
+    cursor: pointer;
+    height: 100px;
+    margin-bottom: 10px;
+    width: 100px; }
+    .client .circle:hover {
+      animation: bounceOut 0.4s linear;
+      -moz-animation: bounceOut 0.4s linear;
+      -webkit-animation: bounceOut 0.4s linear; }
+  .client .name {
+    color: white;
+    font-size: 16px;
+    text-align: center;
+    text-shadow: 0 1px 1px black; }
 
 /*****  FILES SIDEBAR  *****/
 #upload-button {
@@ -159,26 +201,29 @@ a:focus, .btn:focus {
   .files dd {
     cursor: pointer;
     line-height: 15px;
-    padding: 5px; }
+    margin-bottom: 1px;
+    padding: 5px 3px; }
     .files dd:hover {
-      background-color: rgba(0, 0, 0, 0.5); }
-      .files dd:hover .icon-remove {
-        display: inline-block; }
+      background-color: rgba(255, 255, 255, 0.2); }
     .files dd.checked {
-      background-color: rgba(255, 255, 255, 0.5); }
-      .files dd.checked i {
+      background-color: rgba(255, 255, 255, 0.6); }
+      .files dd.checked:hover {
+        background-color: rgba(255, 255, 255, 0.4); }
+      .files dd.checked button {
         display: inline-block; }
+    .files dd > i {
+      float: left;
+      font-size: 24px;
+      padding: 0 5px; }
+    .files dd button {
+      display: none;
+      float: right;
+      margin-right: 3px;
+      margin-top: 2px; }
     .files dd .title {
       float: left;
-      padding: 0 10px; }
-    .files dd i {
-      display: none;
-      float: right; }
-      .files dd i.icon-ok {
-        padding-right: 6px; }
-      .files dd i:first-child {
-        display: block;
-        float: left; }
+      line-height: 24px;
+      padding: 0 3px; }
 
 /*****  ELEMENTS  *****/
 .element {
@@ -326,6 +371,106 @@ a:focus, .btn:focus {
   -webkit-font-smoothing: antialiased; }
   .alert-default .close {
     color: #fff; }
+
+.simplecolorpicker.picker:before {
+  position: absolute;
+  top: -7px;
+  left: 9px;
+  display: inline-block;
+  border-right: 7px solid transparent;
+  border-bottom: 7px solid #cccccc;
+  border-left: 7px solid transparent;
+  border-bottom-color: rgba(0, 0, 0, 0.2);
+  content: ''; }
+
+.simplecolorpicker.picker:after {
+  position: absolute;
+  top: -6px;
+  left: 10px;
+  display: inline-block;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid white;
+  border-left: 6px solid transparent;
+  content: ''; }
+
+/*****  COLOR PICKER  *****/
+.simplecolorpicker.picker {
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  display: none;
+  float: left;
+  left: 0;
+  list-style: none;
+  margin: 1px 0 0;
+  max-width: 288px;
+  padding: 4px 0 0 4px;
+  position: absolute;
+  top: 100%;
+  z-index: 1051;
+  *border-right-width: 2px;
+  *border-bottom-width: 2px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  -webkit-background-clip: padding-box;
+  -moz-background-clip: padding;
+  background-clip: padding-box; }
+.simplecolorpicker.icon, .simplecolorpicker div {
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-block;
+  line-height: 18px;
+  width: 18px;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px; }
+.simplecolorpicker.icon:hover {
+  border: 1px solid #555555; }
+.simplecolorpicker div {
+  margin: 0 4px 4px 0; }
+  .simplecolorpicker div:hover, .simplecolorpicker div.selected {
+    border: 1px solid #555555; }
+
+/*****  KEYFRAMES  *****/
+@-moz-keyframes bounceOut {
+  0% {
+    box-shadow: 0 0 0 4px white; }
+
+  25% {
+    box-shadow: 0 0 0 1px white; }
+
+  50% {
+    box-shadow: 0 0 0 7px white; }
+
+  75% {
+    box-shadow: 0 0 0 4px white; }
+
+  100% {
+    box-shadow: 0 0 0 5px white; } }
+
+@-webkit-keyframes bounceOut {
+  0% {
+    box-shadow: 0 0 0 4px white; }
+
+  25% {
+    box-shadow: 0 0 0 1px white; }
+
+  50% {
+    box-shadow: 0 0 0 7px white; }
+
+  75% {
+    box-shadow: 0 0 0 4px white; }
+
+  100% {
+    box-shadow: 0 0 0 5px white; } }
+
+/*****  GENERAL STYLES  *****/
+.icons {
+  list-style-type: none;
+  text-indent: -0.75em; }
 
 #background-changer-container {
   display: none;
