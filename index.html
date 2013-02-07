@@ -10,20 +10,22 @@
   <link rel="stylesheet" href="css/stylesheet.css">
   <script src="js/vendor/modernizr.min.js"></script>
   <script src="http://use.edgefonts.net/sansita-one.js"></script>
+  <script src="js/vendor/html5media.min.js"></script>
 </head>
 <body>
 
 <div id="wrap">
   <div id="element-container">
-<!--
     <div class="element video" title="Video-Titel" id="element-0">
-      <video src="videos/video.mp4" width="320" height="200" controls preload></video>
+      <video width="320" height="200" controls preload> 
+        <source src="videos/video.mp4"></source>
+        <source src="videos/video.webm"></source>
+      </video>
     </div>
 
     <div class="element image" title="Bild-Titel und so" id="element-1">
       <img src="bilder/fenster.jpg" width="400" />
     </div>
--->
   </div>
 
   <div id="bar" class="navbar navbar-fixed-top">
@@ -101,14 +103,6 @@
     </select>
   </div>
 
-<!--
-  <div id="sidebar-left" class="clients">
-    <h4>Teilnehmer:</h4>
-    <dl id="client-container">
-    </dl>
-  </div>
--->
-
   <form enctype="multipart/form-data" method="post" action="" id="fileupload">
   <div id="sidebar-right">
     <p>
@@ -144,22 +138,22 @@
       <p>Multitouch App for collaborative working with media files powered by</p>
       <ul class="icons">
         <li>
-          <i class="icon-ok"></i>
+          <i class="icon-cogs"></i>
           <a target="_blank" href="http://jquery.com">jquery</a>
         </li>
         <li>
-          <i class="icon-ok"></i>
+          <i class="icon-cogs"></i>
           <a target="_blank" href="http://twitter.github.com/bootstrap">bootstrap</a></li>
         <li>
-          <i class="icon-ok"></i>
+          <i class="icon-cogs"></i>
           <a target="_blank" href="http://nodejs.org">node.js</a>
         </li>
         <li>
-          <i class="icon-ok"></i>
+          <i class="icon-cogs"></i>
           <a target="_blank" href="http://socketo.me">Ratchet</a>
         </li>
         <li>
-          <i class="icon-ok"></i>
+          <i class="icon-cogs"></i>
           <a target="_blank" href="http://autobahn.ws">Autobahn.ws</a>
         </li>
       </ul>
@@ -177,6 +171,7 @@
 <script src="js/vendor/jquery-ui-1.10.0.custom.min.js"></script>
 <script src="js/vendor/jquery.ui.touch-punch.min.js"></script>
 <script src="js/vendor/bootstrap.min.js"></script>
+<!--<script src="js/vendor/hammer.js"></script>-->
 
 <script src="js/vendor/autobahn.min.js"></script>
 <script src="js/vendor/image-picker.js"></script>
@@ -185,15 +180,8 @@
 <script src="js/vendor/md5.js"></script>
 <script src="js/vendor/fileupload.js"></script>
 <script src="js/vendor/iframe-transport.js"></script>
-<script src="js/vendor/html5media.min.js"></script>
-
-<!--<script src="js/vendor/jquery.mobile-1.2.0.min.js"></script>-->
-<!--<script src="js/vendor/quo.js"></script>-->
-<!--<script src="js/vendor/touchy.js"></script>-->
-<!--<script src="js/vendor/hoverable.js"></script>-->
-<!--<script src="js/vendor/touchable.js"></script>-->
 
 <script src="js/main.js"></script>
-<script src="js/gestures.js"></script>
+<!--<script src="js/zoom-rotate.js"></script>-->
 </body>
 </html>
