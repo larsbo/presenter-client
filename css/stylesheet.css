@@ -33,7 +33,7 @@ body {
   min-width: 220px;
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
   top: 20%; }
-  #sidebar-right p {
+  #sidebar-right div, #sidebar-right p {
     margin: 10px; }
 
 #client-container {
@@ -230,6 +230,7 @@ a:focus, .btn:focus {
   background: white;
   -webkit-box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
   float: left;
   display: inline;
   margin: 0 15px 15px;
@@ -244,7 +245,8 @@ a:focus, .btn:focus {
   /***  IMAGE  ***/
   /***  TEXT  ***/
   /***  TEXT  ***/ }
-  .element:after {
+  .element .title {
+    clear: both;
     color: #333;
     font-size: 20px;
     content: attr(title);
@@ -252,12 +254,7 @@ a:focus, .btn:focus {
     top: 15px; }
   .element:hover, .element.hover, .element.active {
     -webkit-box-shadow: 0 10px 20px rgba(0, 0, 0, 0.7);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.7);
-    -webkit-transform: scale(1.05);
-    -moz-transform: scale(1.05);
-    -ms-transform: scale(1.05);
-    -o-transform: scale(1.05);
-    transform: scale(1.05); }
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.7); }
   .element.hover {
     background-color: #000;
     z-index: 1000; }
@@ -265,6 +262,12 @@ a:focus, .btn:focus {
     border: 2px solid #0099cc; }
   .element.image {
     cursor: pointer; }
+    .element.image:hover, .element.image.hover, .element.image.active {
+      -webkit-transform: scale(1.05);
+      -moz-transform: scale(1.05);
+      -ms-transform: scale(1.05);
+      -o-transform: scale(1.05);
+      transform: scale(1.05); }
   .element.text {
     background-color: #f2f6c1;
     border: 1px solid #c3baaa;
@@ -472,6 +475,35 @@ a:focus, .btn:focus {
   list-style-type: none;
   text-indent: -0.75em; }
 
+.relative {
+  position: relative; }
+
+.btn-round {
+  border-radius: 50%;
+  line-height: 26px; }
+  .btn-round.btn-large {
+    font-size: 28px;
+    line-height: 36px;
+    padding-left: 18px;
+    padding-right: 18px; }
+
+#youtube-add-button {
+  height: 60px; }
+  #youtube-add-button span {
+    background: url("../img/youtube.png") no-repeat center center;
+    display: block;
+    height: 34px;
+    width: 34px; }
+
+#youtube-input {
+  -webkit-box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+  display: none;
+  opacity: 0;
+  position: absolute;
+  top: 5px;
+  z-index: 2000; }
+
 #background-changer-container {
   display: none;
   position: absolute;
@@ -499,4 +531,5 @@ a:focus, .btn:focus {
         border-color: #bbb; }
       .image_picker_selector li .thumbnail.selected {
         border-color: #fff;
-        box-shadow: 0 0 5px rgba(255, 255, 255, 0.7); }
+        -webkit-box-shadow: 0 0 6px rgba(255, 255, 255, 0.7);
+        box-shadow: 0 0 6px rgba(255, 255, 255, 0.7); }

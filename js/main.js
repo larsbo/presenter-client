@@ -7,6 +7,10 @@ $(document).ready(function(){
 		event.preventDefault();
 	}, false);
 
+	// diable default firefox image dragging to open it
+	document.body.addEventListener('dragstart', function(event) {
+		event.preventDefault();
+	}, false);
 
 	var uploadDir = 'http://localhost/PresenterServer/upload/';
 
@@ -24,11 +28,22 @@ $(document).ready(function(){
 
 	var fileContainer = $('#file-container');
 	var uploadInput = $('#upload-input');
+	var youtubeAddButton = $('#youtube-add-button');
+	var youtubeLoadButton = $('#youtube-load-button');
+	var youtubeInput = $('#youtube-input');
 	var removeFilesButton = $('#remove-files');
 
 	var backgroundChanger = $('#background-changer');
 	var colorPicker = $('#colorpicker');
 
+
+	/*****  DRAG & DROP YOUTUBE VIDE INSERT  *****/
+	elementContainer.droppable({
+		drop: function(event, ui) {
+			console.log(event);
+			$(this).find("p").html("Dropped!");
+		}
+	});
 
 	/*****  DRAG & DROP FILE UPLOAD  *****/
 	uploadInput.fileupload({
@@ -424,6 +439,12 @@ $(document).ready(function(){
 			content = '<audio src="' + uploadDir + 'files/' + file.name + '" controls preload></audio>';
 			break;
 
+		case 'video/youtube':
+			type = 'video';
+			image = 'icon-film';
+			content = '<iframe width="320" height="180" src="http://www.youtube.com/embed/' + file.name + '?autoplay=1&rel=0" frameborder="0" allowfullscreen></iframe><div class="clearfix"></div>';
+			break;
+
 		case 'application/pdf':
 			type = 'image';
 			image = 'icon-file';
@@ -447,7 +468,7 @@ $(document).ready(function(){
 		$('<dd data-id="' + id + '" class="clearfix"><i class="' + image + '"></i><span class="title">' + file.name + '</span><button type="button" class="btn btn-mini btn-danger" title="entfernen"><i class="icon-remove"></i></button></dd>').appendTo(fileContainer);
 
 		// add element to surface
-		var element = $('<div class="element ' + type + '" title="' + file.name + '" id="element-' + id + '" data-type="' + file.type + '">' + content + '</div>');
+		var element = $('<div class="element ' + type + '" id="element-' + id + '" data-type="' + file.type + '">' + content + '<div class="title">' + file.name + '</div></div>');
 
 		var target = element.appendTo(elementContainer).offset({
 			left: file.left,
@@ -463,8 +484,11 @@ $(document).ready(function(){
 			});
 		}
 
-		// make element draggable & resizeable
+		// make element draggable
 		addGestures(element);
+
+		// make element resizeable & rotateable
+		ZoomView(element, element);
 
 		// update file list & element counter
 		fileContainer.trigger('updateFileList');
@@ -562,6 +586,72 @@ $(document).ready(function(){
 	.trigger('click');
 
 
+
+
+	youtubeInput.css('right', $('#sidebar-right').outerWidth() - 40);
+	youtubeAddButton.click(function(){
+		// Animate the input field
+		if (youtubeInput.is(':visible')) {
+			youtubeInput.animate({
+				right: $('#sidebar-right').outerWidth() - 40,
+				opacity: '0'
+			}, 300, function() {
+				youtubeInput.css('display', 'none');
+			});
+		} else {
+			youtubeInput.css('display', 'block').animate({
+				right: $('#sidebar-right').outerWidth(),
+				opacity: '1'
+			}, 300, function() {
+				youtubeInput.find('input').focus();
+			});
+		}
+	});
+	youtubeLoadButton.click(function(){
+		var url = youtubeInput.find('input').val()
+		if (url != '') {
+			var id = youtube_id(url);
+			if (id) {
+				// create youtube video
+				var file = {
+					name: id,
+					type: 'video/youtube'
+				}
+				appendElement(file);
+
+				// set title
+				youtube_title(id);
+
+				youtubeInput.animate({
+					right: $('#sidebar-right').outerWidth() - 40,
+					opacity: '0'
+				}, 300, function() {
+					youtubeInput.css('display', 'none');
+					youtubeInput.find('input').val('');
+				});
+			}
+		}
+	});
+
+	/* get youtube video id from url */
+	function youtube_id(url) {
+		var p = /^(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$/;
+		return (url.match(p)) ? RegExp.$1 : false;
+	}
+
+	function youtube_title(id) {
+		$.ajax({
+			url: 'http://gdata.youtube.com/feeds/api/videos/' + id + '?v=2&alt=json',
+			dataType: 'jsonp',
+			success: function (data) {
+				var element = md5(id);
+				var title = data.entry.title.$t;
+				if ($('#element-' + element).length) {
+					$('#element-' + element).find('.title').text(title);
+				}
+			}
+		});
+	}
 
 
 	/*****  background changer  *****/

@@ -16,6 +16,8 @@
 
 <div id="wrap">
   <div id="element-container">
+
+<!--
     <div class="element video" title="Video-Titel" id="element-0">
       <video width="320" height="200" controls preload> 
         <source src="videos/video.mp4"></source>
@@ -26,6 +28,8 @@
     <div class="element image" title="Bild-Titel und so" id="element-1">
       <img src="bilder/fenster.jpg" width="400" />
     </div>
+-->
+
   </div>
 
   <div id="bar" class="navbar navbar-fixed-top">
@@ -105,6 +109,16 @@
 
   <form enctype="multipart/form-data" method="post" action="" id="fileupload">
   <div id="sidebar-right">
+    <div class="relative">
+      <div class="input-append" id="youtube-input">
+        <input type="text" class="input-xlarge" name="youtube-video-link">
+        <button type="button" class="btn" id="youtube-load-button">
+          <i class="icon-share-alt"></i>
+          Öffnen
+        </button>
+      </div>
+      <button type="button" class="btn btn-round" id="youtube-add-button"><span></span></button>
+    </div>
     <p>
       <span id="upload-button" class="btn btn-block btn-success">
         <i class="icon-plus icon-white"></i>
@@ -169,9 +183,9 @@
 </div>
 <script src="js/vendor/jquery-1.9.0.min.js"></script>
 <script src="js/vendor/jquery-ui-1.10.0.custom.min.js"></script>
-<script src="js/vendor/jquery.ui.touch-punch.min.js"></script>
+<!--<script src="js/vendor/jquery.ui.touch-punch.min.js"></script>-->
 <script src="js/vendor/bootstrap.min.js"></script>
-<!--<script src="js/vendor/hammer.js"></script>-->
+<script src="js/vendor/hammer.js"></script>
 
 <script src="js/vendor/autobahn.min.js"></script>
 <script src="js/vendor/image-picker.js"></script>
@@ -182,6 +196,6 @@
 <script src="js/vendor/iframe-transport.js"></script>
 
 <script src="js/main.js"></script>
-<!--<script src="js/zoom-rotate.js"></script>-->
+<script src="js/zoom-rotate.js"></script>
 </body>
 </html>
