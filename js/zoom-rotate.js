@@ -1,11 +1,3 @@
-// JavaScript Document
-$(function(){
-	$('#element-container').find('.element').each(function(i, element) {
-		var zoom = new ZoomView(element, element.find(':first'));
-	});
-});
-
-
 /**
 	* Inspired by Jesse Guardiani - May 1st, 2012
 	*/
@@ -38,19 +30,17 @@ function DragView(target) {
 		}
 	}
 
+	/***  START DRAGGING  ***/
 	this.OnDragStart = function(event) {
 		var touches = event.originalEvent.touches || [event.originalEvent];
+
 		for (var t=0; t<touches.length; t++) {
 			var el = touches[t].target.parentNode;
 
-			if (el.className.search('polaroid') > -1) {
-				el = touches[t].target.parentNode.parentNode;
-			}
 			el.style.zIndex = zIndexBackup + 1;
 			zIndexBackup = zIndexBackup + 1;
 	
 			if (el && el == this.target) {
-				$(el).children().toggleClass('upSky');
 				this.lastDrag = {
 					el: el,
 					pos: event.touches[t]
@@ -60,15 +50,13 @@ function DragView(target) {
 		}
 	}
 
+	/***  DRAGGING  ***/
 	this.OnDrag = function(event) {
 		this.drag = [];
 		var touches = event.originalEvent.touches || [event.originalEvent];
+
 		for(var t=0; t<touches.length; t++) {
 			var el = touches[t].target.parentNode;
-
-			if (el.className.search('polaroid') > -1){
-				el = touches[t].target.parentNode.parentNode;
-			}
 
 			if (el && el == this.target) {
 				this.drag.push({
@@ -79,35 +67,34 @@ function DragView(target) {
 		}
 	}
 
+	/***  END DRAGGING  ***/
 	this.OnDragEnd = function(event) {
 		this.drag = [];
 		var touches = event.originalEvent.touches || [event.originalEvent];
+
 		for (var t=0; t<touches.length; t++) {
 			var el = touches[t].target.parentNode;
-		
-			if (el.className.search('polaroid') > -1){
-				el = touches[t].target.parentNode.parentNode;
-			}
-			$(el).children().toggleClass('upSky');
 		}
 	}
 }
 
 
+
 function ZoomView(container, element) {
-	container = $(container).hammer({
+	container = container.hammer({
 		prevent_default: true,
 		scale_treshold: 0,
 		drag_min_distance: 0
 	});
 
-	element = $(element);
+	console.log(container);
+	console.log(element);
 
 	var displayWidth = container.width();
 	var displayHeight = container.height();
 
 	//These two constants specify the minimum and maximum zoom
-	var MIN_ZOOM = 1;
+	var MIN_ZOOM = 0.5;
 	var MAX_ZOOM = 3;
 
 	var scaleFactor = 1;
@@ -166,13 +153,15 @@ function ZoomView(container, element) {
 		previousScaleFactor = scaleFactor;
 	});
 
+
 	/** on drag **/
+/*
 	var dragview = new DragView($(container));
 	container.bind("dragstart", $.proxy(dragview.OnDragStart, dragview));
 	container.bind("drag", $.proxy(dragview.OnDrag, dragview));
 	container.bind("dragend", $.proxy(dragview.OnDragEnd, dragview));
-
 	setInterval($.proxy(dragview.WatchDrag, dragview), 10);
+*/
 
 	function transform(e) {
 		//We're going to scale the X and Y coordinates by the same amount
