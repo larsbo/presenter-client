@@ -194,6 +194,14 @@ a:focus, .btn:focus {
   -o-transform: translate(-300px, 0px) scale(4);
   transform: translate(-300px, 0px) scale(4); }
 
+#youtube-input {
+  -webkit-box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+  display: none;
+  opacity: 0;
+  position: absolute;
+  z-index: 2000; }
+
 .files {
   font-size: 14px;
   margin-right: 10px;
@@ -478,31 +486,9 @@ a:focus, .btn:focus {
 .relative {
   position: relative; }
 
-.btn-round {
-  border-radius: 50%;
-  line-height: 26px; }
-  .btn-round.btn-large {
-    font-size: 28px;
-    line-height: 36px;
-    padding-left: 18px;
-    padding-right: 18px; }
-
-#youtube-add-button {
-  height: 60px; }
-  #youtube-add-button span {
-    background: url("../img/youtube.png") no-repeat center center;
-    display: block;
-    height: 34px;
-    width: 34px; }
-
-#youtube-input {
-  -webkit-box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
-  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
-  display: none;
-  opacity: 0;
-  position: absolute;
-  top: 5px;
-  z-index: 2000; }
+.btn-icon {
+  font-size: 28px;
+  padding: 9px 11px; }
 
 #background-changer-container {
   display: none;
