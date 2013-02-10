@@ -87,35 +87,32 @@ function ZoomView(container, element) {
 		drag_min_distance: 0
 	});
 
-	console.log(container);
-	console.log(element);
+	//console.log(container);
+	//console.log(element);
 
 	var displayWidth = container.width();
 	var displayHeight = container.height();
 
-	//These two constants specify the minimum and maximum zoom
+	// specify the minimum and maximum zoom
 	var MIN_ZOOM = 0.5;
 	var MAX_ZOOM = 3;
 
 	var scaleFactor = 1;
 	var previousScaleFactor = 1;
 
-	//These two variables keep track of the X and Y coordinate of the finger when it first
-	//touches the screen
+	// keep track of the X and Y coordinate of the finger when it first touches the screen.
 	var startX = 0;
 	var startY = 0;
 
-	//These two variables keep track of the amount we need to translate the canvas along the X
-	//and the Y coordinate
+	// keep track of the amount we need to translate the canvas along the X and the Y coordinate.
 	var translateX = 0;
 	var translateY = 0;
 
-	//These two variables keep track of the amount we translated the X and Y coordinates, the last time we
-	//panned.
+	// keep track of the amount we translated the X and Y coordinates, the last time we panned.
 	var previousTranslateX = 0;
 	var previousTranslateY = 0;
 
-	//Translate Origin variables
+	// translate Origin variables
 	var tch1 = 0, 
 			tch2 = 0, 
 			tcX = 0, 
@@ -125,7 +122,7 @@ function ZoomView(container, element) {
 			cssOrigin = "";
 
 	container.bind("transformstart", function(event){
-		//We save the initial midpoint of the first two touches to say where our transform origin is.
+		// save the initial midpoint of the first two touches to say where our transform origin is.
 		e = event
 
 		tch1 = [e.touches[0].x, e.touches[0].y],
@@ -175,3 +172,74 @@ function ZoomView(container, element) {
 		});
 	}
 }
+
+
+
+
+
+/*****  MULTITOUCH  *****/
+
+/*var testEl;
+
+window.onload = function () {
+	testEl = $('testElement');
+	testEl.onmousedown = testEl.ontouchstart = startDrag;
+	testEl2 = $('testElement2');
+	testEl2.onmousedown = testEl2.ontouchstart = startDrag;
+	testEl3 = $('testElement3');
+	testEl3.onmousedown = testEl3.ontouchstart = startDrag;
+	document.ongesturechange = function () {
+		return false;
+	}
+
+}
+
+function startDrag(e) {
+
+	if (e.type === 'touchstart') {
+		this.onmousedown = null;
+		this.ontouchmove = moveDrag;
+		this.ontouchend = function () {
+			this.ontouchmove = null;
+			this.ontouchend = null;
+			this.ontouchstart = startDrag; // Dolfin
+		}
+	} else {
+		document.onmousemove = moveDrag;
+		document.onmouseup = function () {
+			document.onmousemove = null;
+			document.onmouseup = null;
+		}
+	}
+
+	var pos = [this.offsetLeft,this.offsetTop];
+	var that = this;
+	var origin = getCoors(e);
+
+	function moveDrag (e) {
+		var currentPos = getCoors(e);
+		var deltaX = currentPos[0] - origin[0];
+		var deltaY = currentPos[1] - origin[1];
+		this.style.left = (pos[0] + deltaX) + 'px';
+		this.style.top  = (pos[1] + deltaY) + 'px';
+		return false; // cancels scrolling
+
+	}
+
+	function getCoors(e) {
+		var coors = [];
+		if (e.targetTouches && e.targetTouches.length) { 	// iPhone
+			var thisTouch = e.targetTouches[0];
+			coors[0] = thisTouch.clientX;
+			coors[1] = thisTouch.clientY;
+		} else { 								// all others
+			coors[0] = e.clientX;
+			coors[1] = e.clientY;
+		}
+		return coors;
+	}
+}
+
+function $(id) {
+	return document.getElementById(id);
+}*/

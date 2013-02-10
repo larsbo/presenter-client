@@ -40,8 +40,9 @@ $(document).ready(function(){
 	/*****  DRAG & DROP YOUTUBE VIDE INSERT  *****/
 	elementContainer.droppable({
 		drop: function(event, ui) {
-			console.log(event);
-			$(this).find("p").html("Dropped!");
+			//console.log(event);
+			console.log('dropped on ');
+			console.log(this);
 		}
 	});
 
