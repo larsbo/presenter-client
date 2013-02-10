@@ -35,16 +35,8 @@ $(document).ready(function(){
 
 	var backgroundChanger = $('#background-changer');
 	var colorPicker = $('#colorpicker');
+	var trash = $('#trash');
 
-
-	/*****  DRAG & DROP YOUTUBE VIDE INSERT  *****/
-	elementContainer.droppable({
-		drop: function(event, ui) {
-			//console.log(event);
-			console.log('dropped on ');
-			console.log(this);
-		}
-	});
 
 	/*****  DRAG & DROP FILE UPLOAD  *****/
 	uploadInput.fileupload({
@@ -99,19 +91,22 @@ $(document).ready(function(){
 	/*****  FILE LIST  *****/
 	fileContainer
 	.on('mouseenter', 'dd', function(event) {
-		$('#element-' + $(this).data('id')).addClass('hover');
+		var color = colorPicker.val();
+		$('#element-' + $(this).data('id')).addClass('hover').css('background-color', color);
 	})
 	.on('mouseleave', 'dd', function(event) {
-		$('#element-' + $(this).data('id')).removeClass('hover');
+		$('#element-' + $(this).data('id')).removeClass('hover').css('background-color', '')
 	})
 	.on('click', 'dd', function(event) {
 		var el = $(this);
+		var color = colorPicker.val();
+
 		if (el.hasClass('checked')) {
 			el.removeClass('checked');
-			$('#element-' + el.data('id')).removeClass('active').addClass('hover');
+			$('#element-' + el.data('id')).removeClass('active').css('background-color', color);
 		} else {
 			el.addClass('checked');
-			$('#element-' + el.data('id')).addClass('active');
+			$('#element-' + el.data('id')).addClass('active').css('border-color', color);
 		}
 	})
 	.on('click', 'button', function(event) {
@@ -211,16 +206,23 @@ $(document).ready(function(){
 	function onConnect(topic, event) {
 		if (event[1] != undefined) {
 			$.each(event[1], function() {
-				$.each(this, function(client, session) {
+				$.each(this, function(client, data) {
+					// if no client name set use the session id
+					if (data.name == '') {
+						data.name = data.session;
+					}
 					// add connected client to list
 					if (!$('#client-' + client).length) {
 						var current = '';
-						if (session == sess.sessionid()) {
+						if (data.session == sess.sessionid()) {
 							// this client
 							current = ' current';
 						}
-						var entry = $('<div id="client-' + client + '" class="client' + current + '" data-session="' + session + '"><img class="circle" src="http://cl.busb.org/L79J/dj.png" /><div class="name">' + session + '</div></div>');
+						var entry = $('<div id="client-' + client + '" class="client' + current + '" data-session="' + data.session + '"><img class="circle" src="http://cl.busb.org/L79J/dj.png" /><div class="name">' + data.name + '</div></div>');
 						entry.hide().appendTo(clientContainer).fadeIn();
+
+						// set client color
+						updateColor(data.session, data.color);
 					}
 				});
 			});
@@ -242,9 +244,9 @@ $(document).ready(function(){
 	function onChangeName(topic, event) {
 		if ($.isArray(event)) {
 			// broadcast
-				$.each(event[1], function(session, name) {
-					updateName(session, name);
-				});
+			$.each(event[1], function(session, name) {
+				updateName(session, name);
+			});
 		} else {
 			updateName(event.session, event.name);
 		}
@@ -253,9 +255,9 @@ $(document).ready(function(){
 	function onChangeColor(topic, event) {
 		if ($.isArray(event)) {
 			// broadcast
-				$.each(event[1], function(session, color) {
-					updateColor(session, name);
-				});
+			$.each(event[1], function(session, color) {
+				updateColor(session, name);
+			});
 		} else {
 			updateColor(event.session, event.color);
 		}
@@ -396,9 +398,7 @@ $(document).ready(function(){
 					'background-color': color,
 					'box-shadow': '0 0 0 5px ' + color
 				});
-				clientName.css({
-					'background-color': color
-				});
+				elementContainer.find('.active').css('border-color', color);
 			}
 		});
 	}
@@ -447,9 +447,9 @@ $(document).ready(function(){
 			break;
 
 		case 'application/pdf':
-			type = 'image';
+			type = 'pdf';
 			image = 'icon-file';
-			content = file.name;
+			content = '<object data="' + uploadDir + 'files/' + file.name + '" type="application/pdf" width="480" height="320"><p>Kein PDF-Plugin vorhanden! <a href="' + uploadDir + 'files/' + file.name + '">PDF-Datei speichern</a></p></object>';
 			break;
 
 		case 'text/plain':
@@ -565,6 +565,17 @@ $(document).ready(function(){
 		});
 	};
 
+	/*****  DROP ELEMENTS INTO TRASH OR CLIENTS  *****/
+	trash.droppable({
+		activeClass: "active",
+		hoverClass: "hover",
+		drop: function(event, ui) {
+			console.log(event);
+			console.log(this);
+		}
+	});
+
+
 	// set element container's height
 	$(window).resize(function() {
 		elementContainer.css('height', $(document.body).height() - 57);
@@ -572,8 +583,6 @@ $(document).ready(function(){
 
 
 	/*****  INIT OTHER PLUGINS  *****/
-	$('#trash').tooltip({ placement: 'left' });
-
 	colorPicker
 	.on('click', function() {
 		colorPicker.simplecolorpicker({picker: true});

@@ -61,8 +61,7 @@ body {
   background-color: rgba(0, 0, 0, 0.5);
   border-top-left-radius: 100px;
   bottom: -50px;
-  cursor: help;
-  opacity: 0.4;
+  opacity: 0;
   padding: 45px 52px;
   position: absolute;
   right: -50px;
@@ -70,7 +69,9 @@ body {
   -moz-transition: linear 200ms;
   -o-transition: linear 200ms;
   transition: linear 200ms; }
-  #trash:hover {
+  #trash.active {
+    opacity: 0.4; }
+  #trash.hover {
     bottom: -55px;
     opacity: 0.8;
     padding: 55px 62px;
@@ -146,16 +147,16 @@ a:focus, .btn:focus {
   border-radius: 4px;
   -webkit-box-shadow: 0 1px 0 white, 0 1px 3px 0 rgba(0, 0, 0, 0.3) inset !important;
   box-shadow: 0 1px 0 white, 0 1px 3px 0 rgba(0, 0, 0, 0.3) inset !important;
-  color: white !important;
   display: inline-block;
   font-style: italic;
   height: 16px !important;
   margin: -1px 5px 0 !important;
   padding: 3px !important;
-  text-shadow: 0 1px 1px black !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3) !important;
   width: 150px !important; }
   .client-name:focus {
-    background-color: #999999 !important; }
+    background-color: #999999 !important;
+    color: white !important; }
 
 /*****  CLIENTS SIDEBAR  *****/
 .client {
@@ -202,6 +203,9 @@ a:focus, .btn:focus {
   position: absolute;
   z-index: 2000; }
 
+.iconp-youtube:hover {
+  color: red; }
+
 .files {
   font-size: 14px;
   margin-right: 10px;
@@ -243,7 +247,6 @@ a:focus, .btn:focus {
   display: inline;
   margin: 0 15px 15px;
   min-width: 5%;
-  max-width: 25%;
   padding: 10px 10px 25px;
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
   -webkit-transition: transform 0.15s linear;
@@ -263,11 +266,9 @@ a:focus, .btn:focus {
   .element:hover, .element.hover, .element.active {
     -webkit-box-shadow: 0 10px 20px rgba(0, 0, 0, 0.7);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.7); }
-  .element.hover {
-    background-color: #000;
-    z-index: 1000; }
   .element.active {
-    border: 2px solid #0099cc; }
+    border-width: 3px;
+    border-style: solid; }
   .element.image {
     cursor: pointer; }
     .element.image:hover, .element.image.hover, .element.image.active {
