@@ -1,4 +1,4 @@
-var sess, msg, ip;
+var sess, msg, ip, uploader;
 
 $(document).ready(function(){
 
@@ -660,7 +660,7 @@ $(document).ready(function(){
 
 
 /*****  DRAG & DROP FILE UPLOAD  *****/
-	uploadInput.fileupload({
+	uploader = uploadInput.fileupload({
 		acceptFileTypes: /(\.|\/)(gif|jpe?g|png|bmp)$/i,
 		autoUpload: false,
 		dataType: 'json',
