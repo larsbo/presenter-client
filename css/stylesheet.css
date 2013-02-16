@@ -484,6 +484,11 @@ a:focus, .btn:focus {
   list-style-type: none;
   text-indent: -0.75em; }
 
+body.wait {
+  cursor: wait !important; }
+  body.wait * {
+    cursor: wait !important; }
+
 .relative {
   position: relative; }
 

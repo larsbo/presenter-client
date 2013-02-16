@@ -37,97 +37,13 @@ $(document).ready(function(){
 	var colorPicker = $('#colorpicker');
 	var trash = $('#trash');
 
-
-	/*****  DRAG & DROP FILE UPLOAD  *****/
-	uploadInput.fileupload({
-		acceptFileTypes: /(\.|\/)(gif|jpe?g|png|bmp)$/i,
-		autoUpload: false,
-		dataType: 'json',
-		url: uploadDir,
-
-		add: function(e, data) {
-			var file = data.files[0];
-			var message = notifyContainer.notify({
-				message: { html: "<small>Datei wird geladen...</small><div class=\"progress progress-striped active\"><div class=\"bar\"></div></div>" },
-				fadeOut: { enabled: false }
-			});
-			message.show();
-			data.context = message;
-			data.submit();
-		},
-
-		progress: function(e, data) {
-			var progress = parseInt(data.loaded / data.total * 100, 10);
-			data.context.$element.find('.bar').css(
-				'width',
-				progress + '%'
-			);
-		},
-
-		done: function(e, data) {
-			$.each(data.result.files, function (index, file) {
-
-				// append element to surface & file list
-				var position = appendElement(file);
-
-				// remove upload message
-				data.context.hide();
-
-				// publish new element
-				if (sess && sess._websocket_connected) {
-					sess.publish("add", {
-						session: sess.sessionid(),
-						name: file.name,
-						type: file.type,
-						left: position.left,
-						top: position.top
-					}, true);
-				}
-			});
-		}
-	});
+	// set element container's height
+	$(window).resize(function() {
+		elementContainer.css('height', $(document.body).height() - 57);
+	}).resize();
 
 
-	/*****  FILE LIST  *****/
-	fileContainer
-	.on('mouseenter', 'dd', function(event) {
-		var color = colorPicker.val();
-		$('#element-' + $(this).data('id')).addClass('hover').css('background-color', color);
-	})
-	.on('mouseleave', 'dd', function(event) {
-		$('#element-' + $(this).data('id')).removeClass('hover').css('background-color', '')
-	})
-	.on('click', 'dd', function(event) {
-		var el = $(this);
-		var color = colorPicker.val();
-
-		if (el.hasClass('checked')) {
-			el.removeClass('checked');
-			$('#element-' + el.data('id')).removeClass('active').css('background-color', color);
-		} else {
-			el.addClass('checked');
-			$('#element-' + el.data('id')).addClass('active').css('border-color', color);
-		}
-	})
-	.on('click', 'button', function(event) {
-		removeFile($(this).parent());
-	})
-	.bind('updateFileList', function() {
-		if (fileContainer.find('dd').length == 0) {
-			removeFilesButton.fadeOut();
-		} else {
-			removeFilesButton.fadeIn();
-		}
-	});
-	removeFilesButton.click(function() {
-		fileContainer.find('dd').each(function(i, element) {
-			removeFile($(element));
-		});
-	});
-
-
-
-/*****  WAMP SERVER COMMUNICATION  *****/
+/*****  WEB SOCKET SERVER COMMUNICATION  *****/
 
 	// connect to WAMP server
 	function connect(server){
@@ -137,16 +53,17 @@ $(document).ready(function(){
 			// create session
 			sess = session;
 
-			// subscribe to topic, providing an event handler
-			sess.subscribe("connect", onConnect);
-			sess.subscribe("disconnect", onDisconnect);
-			sess.subscribe("change-name", onChangeName);
-			sess.subscribe("change-color", onChangeColor);
-			sess.subscribe("drag", onDrag);
-			sess.subscribe("drag-start", onDragStart);
+			// subscribe to topic & providing an event handler
+			sess.subscribe("clients", onClients);
+			sess.subscribe("elements", onElements);
 			sess.subscribe("add", onAdd);
 			sess.subscribe("remove", onRemove);
-			sess.subscribe("synchronize", onSynchronize);
+			sess.subscribe("drag-start", onDragStart);
+			sess.subscribe("drag", onDrag);
+			sess.subscribe("rotate-scale", onRotateScale);
+			sess.subscribe("change-name", onChangeName);
+			sess.subscribe("change-color", onChangeColor);
+			sess.subscribe("disconnect", onDisconnect);
 
 			// publish session id
 			sess.publish("connect", {
@@ -156,14 +73,17 @@ $(document).ready(function(){
 			// publish current elements
 			var elements = getElements();
 			$.each(elements, function() {
-				//console.log(this);
 				sess.publish("add", {
 					session: sess.sessionid(),
+					id: this.id,
 					name: this.name,
 					type: this.type,
 					left: this.left,
-					top: this.top
-				}, true);
+					top: this.top,
+					index: this.index,
+					rotation: this.rotation,
+					scale: this.scale
+				});
 			});
 
 			// show message
@@ -176,18 +96,20 @@ $(document).ready(function(){
 			disconnectForm.find('.client-name').val(sess.sessionid());
 			clientContainer.fadeIn('slow');
 			colorPicker.trigger('change');
-
+			$('body').removeClass('wait');
 		},
 
-		/*****  WAMP connection lost or could not establish  *****/
+		/*****  server connection lost or could not establish  *****/
 		function (code, reason) {
 			disconnect(reason);
 		});
 	};
 
+	// disconnect from server
 	function disconnect(message) {
-		// disconnect from server
-		sess.close();
+		if (sess) {
+			sess.close();
+		}
 
 		// show message
 		notifyContainer.notify({ message: { text: message } }).show();
@@ -197,15 +119,16 @@ $(document).ready(function(){
 		disconnectForm.hide().find('.server-ip').html('');
 		clientContainer.fadeOut('slow');
 		clientContainer.html('');
+		$('body').removeClass('wait');
 	};
 
 
 
 /*****  EVENTS FROM SERVER  *****/
 
-	function onConnect(topic, event) {
-		if (event[1] != undefined) {
-			$.each(event[1], function() {
+	function onClients(topic, clients) {
+		if (clients[1] != undefined) {
+			$.each(clients[1], function() {
 				$.each(this, function(client, data) {
 					// if no client name set use the session id
 					if (data.name == '') {
@@ -229,16 +152,63 @@ $(document).ready(function(){
 		}
 	}
 
-	function onDisconnect(topic, event) {
-		$.each(event[1], function(id, session) {
-			// remove disconnected client
-			var client = $('#client-' + id);
-			if (client.length) {
-				client.fadeOut('slow', '', function(){
-					client.remove();
-				});
+	function onElements(topic, element) {
+		$.each(element[1], function() {
+			if (this.session != sess.sessionid()) {
+				appendElement(this);
 			}
 		});
+	}
+
+	function onAdd(topic, element) {
+		if (element.session != sess.sessionid()) {
+			appendElement(element);
+		}
+	}
+
+	function onRemove(topic, event) {
+		if (event.session != sess.sessionid()) {
+			var file;
+			fileContainer.find('dd').each(function(i, element){
+				if ($(this).data('id') == event.id) {
+					file = $(this);
+				}
+			});
+
+			// remove file list entry
+			file.fadeOut('slow', '', function(){
+				file.remove();
+				fileContainer.trigger('updateFileList');
+			});
+
+			// remove element from surface
+			var element = $('#' + event.id);
+			if (element.length) {
+				element.fadeOut('slow', '', function(){
+					element.remove();
+				});
+			}
+		}
+	}
+
+	function onDragStart(topic, event) {
+		if (event.session != sess.sessionid()) {
+			changeZIndex(event);
+
+			notifyContainer.notify({ message: { text: 'Bewege ' + event.id } }).show();
+		}
+	}
+
+	function onDrag(topic, event) {
+		if (event.session != sess.sessionid()) {
+			changePosition(event);
+		}
+	}
+
+	function onRotateScale(topic, event) {
+		if (event.session != sess.sessionid()) {
+			changeRotationScale(event);
+		}
 	}
 
 	function onChangeName(topic, event) {
@@ -263,156 +233,85 @@ $(document).ready(function(){
 		}
 	}
 
-	function onDrag(topic, event) {
-		if (event.session != sess.sessionid()) {
-			changePosition(event);
-		}
-	}
-
-	function onDragStart(topic, event) {
-		if (event.session != sess.sessionid()) {
-			notifyContainer.notify({ message: { text: 'Bewege ' + event.el } }).show();
-		}
-	}
-
-	function onAdd(topic, element) {
-		if (element.session != sess.sessionid()) {
-			appendElement(element);
-		}
-	}
-
-	function onSynchronize(topic, event) {
-		$.each(event[1], function() {
-			if (this.session != sess.sessionid()) {
-				appendElement(this);
+	function onDisconnect(topic, event) {
+		$.each(event[1], function(id, session) {
+			// remove disconnected client from list
+			var client = $('#client-' + id);
+			if (client.length) {
+				client.fadeOut('slow', '', function(){
+					client.remove();
+				});
 			}
 		});
 	}
 
-	function onRemove(topic, event) {
-		if (event.session != sess.sessionid()) {
-			var file;
-			fileContainer.find('dd').each(function(i, element){
-				if ($(this).data('id') == event.id) {
-					file = $(this);
-				}
-			});
-
-			// remove file list entry
-			file.fadeOut('slow', '', function(){
-				file.remove();
-				fileContainer.trigger('updateFileList');
-			});
-
-			// remove element from surface
-			var element = $('#element-' + event.id);
-			if (element.length) {
-				element.fadeOut('slow', '', function(){
-					element.remove();
-				});
-			}
-		}
-	}
 
 
-
-	/*****  FORM SUBMIT  *****/
-	connectForm.submit(function(e){
-		e.preventDefault();
-		server = $('#server').val();
-		if (server != '') {
-			connectForm.find('button').button('loading');
-			connect(server);
-		}
-	});
-	disconnectForm.submit(function(e){
-		e.preventDefault();
-		// disconnect from server
-		disconnect('Verbindung zum Server wurde getrennt!');
-	});
-
-
-	/*****  TOGGLE CONNECT-DISCONNECT BAR  *****/
-	toggleBar.click(function(){
-		bar.slideToggle();
-		toggleBar.find('i').toggleClass('icon-chevron-up icon-chevron-down');
-	});
-
-
-	/*****  CHANGE CLIENT NAME  *****/
-	clientName.keyup(function(e){
-		var charCode = e.charCode || e.keyCode;
-		if (charCode == 13) {
-			// disable Enter key
-			return false;
-		} else {
-			sess.publish("change-name", {
-				session: sess.sessionid(),
-				name: clientName.val()
-			});
-		}
-	});
-
-
-	/*****  CHANGE ELEMENT POSITION  *****/
-	function changePosition(data) {
-		var el = $('#' + data.el);
-		if (el.length) {
-			el
-			.offset({
-				left: data.x,
-				top: data.y
-			})
-			.css('z-index', data.index);
-		}
-	};
-
-
+/*****  GENERAL FUNCTIONS  *****/
 	function getElements() {
 		var files = [];
 		elementContainer.find('.element').each(function(i, element) {
-			var position = $(element).offset();
+			var el = $(element);
+			var position = el.offset();
+
 			var file = {
-				name: $(element).prop('title'),
-				type: $(element).data('type'),
+				id: el.prop('id'),
+				name: el.find('.title').text(),
+				type: el.data('type'),
 				left: position.left,
-				top: position.top
+				top: position.top,
+				index: el.css('z-index'),
+				rotation: getRotation(el),
+				scale: getScale(el)
 			}
 			files.push(file);
 		});
 		return files;
 	}
 
-	function updateName(session, name) {
-		clientContainer.find('.client').each(function(i, element) {
-			if ($(element).data('session') == session) {
-				$(element).find('.name').text(name);
-			}
-		});
+	function getRotation(el) {
+		var matrix = el.css("-webkit-transform") ||
+		el.css("-moz-transform") ||
+		el.css("-ms-transform") ||
+		el.css("-o-transform") ||
+		el.css("transform");
+
+		if (matrix !== 'none') {
+			var values = matrix.split('(')[1].split(')')[0].split(',');
+			var a = values[0];
+			var b = values[1];
+			return Math.round(Math.atan2(b, a) * (180/Math.PI));
+		}
+		return 0;
 	}
 
-	function updateColor(session, color) {
-		clientContainer.find('.client').each(function(i, element) {
-			if ($(element).data('session') == session) {
-				$(element).find('.circle').css({
-					'background-color': color,
-					'box-shadow': '0 0 0 5px ' + color
-				});
-				elementContainer.find('.active').css('border-color', color);
-			}
-		});
+	function getScale(el) {
+		var matrix = el.css("-webkit-transform") ||
+		el.css("-moz-transform") ||
+		el.css("-ms-transform") ||
+		el.css("-o-transform") ||
+		el.css("transform");
+
+		if (matrix !== 'none') {
+			var values = matrix.split('(')[1].split(')')[0].split(',');
+			var a = values[0];
+			var b = values[1];
+			return Math.sqrt(a*a + b*b);
+		}
+		return 1;
 	}
 
 	function appendElement(file) {
 		// generate unique id by hash of file name
-		var id = md5(file.name);
+		file.id = md5(file.name);
 		var type, image, content;
 
 		// abort if element already exists
-		if ($('#element-' + id).length) {
-			return $('#element-' + id).offset();
+		if ($('#' + file.id).length) {
+			return $('#' + file.id).offset();
 		}
 
+		// check file type
 		switch (file.type) {
 
 		case 'image/jpeg':
@@ -466,42 +365,55 @@ $(document).ready(function(){
 		}
 
 		// add element to file list
-		$('<dd data-id="' + id + '" class="clearfix"><i class="' + image + '"></i><span class="title">' + file.name + '</span><button type="button" class="btn btn-mini btn-danger" title="entfernen"><i class="icon-remove"></i></button></dd>').appendTo(fileContainer);
+		$('<dd data-id="' + file.id + '" class="clearfix"><i class="' + image + '"></i><span class="title">' + file.name + '</span><button type="button" class="btn btn-mini btn-danger" title="entfernen"><i class="icon-remove"></i></button></dd>').appendTo(fileContainer);
 
 		// add element to surface
-		var element = $('<div class="element ' + type + '" id="element-' + id + '" data-type="' + file.type + '">' + content + '<div class="title">' + file.name + '</div></div>');
+		var element = $('<div class="element ' + type + '" id="' + file.id + '" data-type="' + file.type + '">' + content + '<div class="title">' + file.name + '</div></div>');
+		element
+		.appendTo(elementContainer)
 
-		var target = element.appendTo(elementContainer).offset({
+		// set position
+		.offset({
 			left: file.left,
 			top: file.top
 		});
 
+		if (file.index === undefined) {
+			file.index = getMaxZIndex() + 1;
+		}
+		element.css('z-index', file.index);
+
+		console.log(file);
+		if (file.index !== undefined || file.rotation !== undefined) {
+			changeRotationScale(file);
+		}
+
+
+		// add content of text files to element container
 		if (type == 'text') {
 			$.get(uploadDir + 'files/' + file.name, function(data) {
 				if (data.length > 1000) {
 					data = data.substring(0, 1000) + '...';
 				}
-				target.html(data.replace('\n', '<br>') + '<br><br><b>' + file.name + '</b>');
+				$('#' + file.id).html(data.replace('\n', '<br>') + '<br><br><b>' + file.name + '</b>');
 			});
 		}
 
 		// make element draggable
-		addGestures(element);
+		enableDragging(element);
 
-		// make element resizeable & rotateable
-		ZoomView(element, element);
+		// make element rotateable & scaleable
+		enableRotationScale(element);
 
 		// update file list & element counter
 		fileContainer.trigger('updateFileList');
 
-		return element.offset();
+		return file;
 	};
-
 
 	function removeFile(file) {
 		var id = file.data('id');
-		var name = file.find('.title').text();
-		var element = $('#element-' + id);
+		var element = $('#' + id);
 
 		// remove file list entry
 		file.fadeOut('slow', '', function(){
@@ -514,58 +426,298 @@ $(document).ready(function(){
 			element.remove();
 		});
 
-		/* publish 'remove item' if connected */
+		// publish 'remove item' if connected
 		if (sess && sess._websocket_connected) {
 			sess.publish("remove", {
 				session: sess.sessionid(),
-				id: id,
-				name: name
-			}, true);
+				id: id
+			});
 		}
 	};
 
+	function changePosition(data) {
+		var el = $('#' + data.id);
+		if (el.length) {
+			el
+			.offset({
+				left: data.left,
+				top: data.top
+			});
+		}
+	};
 
-	function addGestures(element) {
-		// make element dragable
+	function changeZIndex(data) {
+		var el = $('#' + data.id);
+		if (el.length) {
+			el.css('z-index', data.index);
+		}
+	};
+
+	function changeRotationScale(data) {
+		var el = $('#' + data.id);
+		if (el.length) {
+			el.css({
+				webkitTransform: 'rotate(' + data.rotation + 'deg) scale(' + data.scale + ')',
+				webkitTransformOrigin: data.origin,
+				transform: 'rotate(' + data.rotation + 'deg) scale(' + data.scale + ')',
+				transformOrigin: data.origin,
+			});
+		}
+	};
+
+	function updateName(session, name) {
+		clientContainer.find('.client').each(function(i, element) {
+			if ($(element).data('session') == session) {
+				$(element).find('.name').text(name);
+			}
+		});
+	};
+
+	function updateColor(session, color) {
+		clientContainer.find('.client').each(function(i, element) {
+			if ($(element).data('session') == session) {
+				$(element).find('.circle').css({
+					'background-color': color,
+					'box-shadow': '0 0 0 5px ' + color
+				});
+				elementContainer.find('.active').css('border-color', color);
+			}
+		});
+	};
+
+	function getMaxZIndex() {
+		var maxIndex = 0;
+		elementContainer.find('.element').each(function(){
+			var index = parseInt($(this).css('z-index'), 10);
+			if (index > maxIndex) {
+				maxIndex = index;
+			}
+		});
+		return maxIndex;
+	};
+
+/*****  ELEMENT DRAGGING  *****/
+	function enableDragging(element) {
 		element.draggable({
 			start: function() {
-				/* publish 'drag start' if connected */
+				// publish 'drag start' if connected
 				if (sess && sess._websocket_connected) {
-					sess.publish("drag-start", { el: element.prop('id') }, true);
+					sess.publish("drag-start", {
+						id: element.prop('id'),
+						index: getMaxZIndex() + 1
+					});
 				}
 			},
 			drag: function() {
-				/* publish current position if connected */
+				// publish position if connected
 				if (sess && sess._websocket_connected) {
 					var position = element.offset();
 					sess.publish("drag", {
 						session: sess.sessionid(),
-						el: element.prop('id'),
-						x: position.left,
-						y: position.top,
-						index: element.css('zIndex')
-					}, true);
+						id: element.prop('id'),
+						left: position.left,
+						top: position.top
+					});
 				}
 			},
 			stop: function() {
-				/* publish current position if connected */
+				// publish position if connected
 				if (sess && sess._websocket_connected) {
 					var position = element.offset();
 					sess.publish("drag-end", {
 						session: sess.sessionid(),
-						name: element.prop('title'),
+						id: element.prop('id'),
 						left: position.left,
 						top: position.top
-					}, true);
+					});
 				}
 			},
+			// don't drag elements out of the surface
 			containment: "parent",
+			// setting for z-index of elements
 			stack: "#element-container .element",
+			// don't resize the surface
 			scroll: false
 		});
 	};
 
-	/*****  DROP ELEMENTS INTO TRASH OR CLIENTS  *****/
+
+
+/*****  ELEMENT ROTATION & SCALE  *****/
+	function enableRotationScale(container) {
+
+		container = container.hammer({
+			prevent_default: true,
+			scale_treshold: 0,
+			drag_min_distance: 0
+		});
+
+		//console.log(container);
+		var id = container.prop('id');
+
+		var displayWidth = container.width();
+		var displayHeight = container.height();
+
+		// specify the minimum and maximum zoom
+		var MIN_ZOOM = 0.5;
+		var MAX_ZOOM = 3;
+
+		var scaleFactor = 1;
+		var previousScaleFactor = 1;
+
+		// keep track of the X and Y coordinate of the finger when it first touches the screen.
+		var startX = 0;
+		var startY = 0;
+
+		// keep track of the amount we need to translate the canvas along the X and the Y coordinate.
+		var translateX = 0;
+		var translateY = 0;
+
+		// keep track of the amount we translated the X and Y coordinates, the last time we panned.
+		var previousTranslateX = 0;
+		var previousTranslateY = 0;
+
+		// translate Origin variables
+		var tch1 = 0, 
+				tch2 = 0, 
+				tcX = 0, 
+				tcY = 0,
+				toX = 0,
+				toY = 0,
+				cssOrigin = "";
+
+		function transform(e) {
+			//scale width & height by the same amount
+			var cssScale = 'scale(' + scaleFactor + ') rotate(' + e.rotation + 'deg)';
+
+			container.css({
+				webkitTransform: cssScale,
+				webkitTransformOrigin: cssOrigin,
+				transform: cssScale,
+				transformOrigin: cssOrigin,
+			});
+		};
+
+		container.bind('transformstart', function(event){
+			// save the initial midpoint of the first two touches to say where our transform origin is.
+			e = event;
+
+			tch1 = [e.touches[0].x, e.touches[0].y];
+			tch2 = [e.touches[1].x, e.touches[1].y];
+
+			tcX = (tch1[0] + tch2[0]) / 2;
+			tcY = (tch1[1] + tch2[1]) / 2;
+
+			toX = tcX;
+			toY = tcY;
+
+			var left = container.offset().left;
+			var top = container.offset().top;
+
+			cssOrigin = (-(left) + toX) / scaleFactor + 'px ' + (-(top) + toY) / scaleFactor + 'px';
+		});
+
+		container.bind('transform', function(event) {
+			scaleFactor = previousScaleFactor * event.scale;
+			scaleFactor = Math.max(MIN_ZOOM, Math.min(scaleFactor, MAX_ZOOM));
+
+			event.id = id;
+			event.scale = scaleFactor;
+			event.origin = cssOrigin;
+
+			changeRotationScale(event);
+			//transform(event);
+
+			// publish 'rotation-scale' if connected
+			if (sess && sess._websocket_connected) {
+				sess.publish("rotate-scale", {
+					session: sess.sessionid(),
+					id: id,
+					rotation: event.rotation,
+					scale: event.scale
+				});
+			}
+		});
+
+		container.bind('transformend', function(event) {
+			previousScaleFactor = scaleFactor;
+			event.scale = scaleFactor;
+			event.origin = cssOrigin;
+			console.log(event);
+
+			// publish 'rotation-scale-end' if connected
+			if (sess && sess._websocket_connected) {
+				sess.publish("rotate-scale-end", {
+					session: sess.sessionid(),
+					id: id,
+					rotation: event.rotation,
+					scale: event.scale
+				});
+			}
+		});
+	};
+
+
+
+/*****  DRAG & DROP FILE UPLOAD  *****/
+	uploadInput.fileupload({
+		acceptFileTypes: /(\.|\/)(gif|jpe?g|png|bmp)$/i,
+		autoUpload: false,
+		dataType: 'json',
+		url: uploadDir,
+
+		// dropped file
+		add: function(e, data) {
+			var file = data.files[0];
+			var message = notifyContainer.notify({
+				message: { html: "<small>Datei wird geladen...</small><div class=\"progress progress-striped active\"><div class=\"bar\"></div></div>" },
+				fadeOut: { enabled: false }
+			});
+			message.show();
+			data.context = message;
+			data.submit();
+		},
+
+		// transfering file
+		progress: function(e, data) {
+			var progress = parseInt(data.loaded / data.total * 100, 10);
+			data.context.$element.find('.bar').css(
+				'width',
+				progress + '%'
+			);
+		},
+
+		// upload finished
+		done: function(e, data) {
+			$.each(data.result.files, function (index, file) {
+
+				// remove upload message
+				data.context.hide();
+
+				// append element to surface & file list & return position and element id
+				var info = appendElement(file);
+
+				// publish 'add element' if connected
+				if (sess && sess._websocket_connected) {
+					sess.publish("add", {
+						session: sess.sessionid(),
+						id: info.id,
+						name: file.name,
+						type: file.type,
+						left: info.left,
+						top: info.top,
+						index: info.index,
+						rotation: 0,	// default rotation: 0
+						scale: 1			// default scale: 1
+					});
+				}
+			});
+		}
+	});
+
+
+
+/*****  DROP ELEMENTS INTO TRASH OR CLIENTS  *****/
 	trash.droppable({
 		activeClass: "active",
 		hoverClass: "hover",
@@ -576,13 +728,82 @@ $(document).ready(function(){
 	});
 
 
-	// set element container's height
-	$(window).resize(function() {
-		elementContainer.css('height', $(document.body).height() - 57);
-	}).resize();
+
+/*****  FILE LIST INTERACTION  *****/
+	fileContainer
+	.on('mouseenter', 'dd', function(event) {
+		var color = colorPicker.val();
+		$('#' + $(this).data('id')).addClass('hover').css('background-color', color);
+	})
+	.on('mouseleave', 'dd', function(event) {
+		$('#' + $(this).data('id')).removeClass('hover').css('background-color', '')
+	})
+	.on('click', 'dd', function(event) {
+		var el = $(this);
+		var color = colorPicker.val();
+
+		if (el.hasClass('checked')) {
+			el.removeClass('checked');
+			$('#' + el.data('id')).removeClass('active').css('background-color', color);
+		} else {
+			el.addClass('checked');
+			$('#' + el.data('id')).addClass('active').css('border-color', color);
+		}
+	})
+	.on('click', 'button', function(event) {
+		removeFile($(this).parent());
+	})
+	.bind('updateFileList', function() {
+		if (fileContainer.find('dd').length == 0) {
+			removeFilesButton.fadeOut();
+		} else {
+			removeFilesButton.fadeIn();
+		}
+	});
+	removeFilesButton.click(function() {
+		fileContainer.find('dd').each(function(i, element) {
+			removeFile($(element));
+		});
+	});
 
 
-	/*****  INIT OTHER PLUGINS  *****/
+
+/*****  LAYOUT INTERACTION  *****/
+	connectForm.submit(function(e){
+		e.preventDefault();
+		server = $('#server').val();
+		if (server != '') {
+			connectForm.find('button').button('loading');
+			$('body').addClass('wait');
+			connect(server);
+		}
+	});
+
+	disconnectForm.submit(function(e){
+		e.preventDefault();
+		// disconnect from server
+		disconnect('Verbindung zum Server wurde getrennt!');
+	});
+
+	toggleBar.click(function(){
+		bar.slideToggle();
+		toggleBar.find('i').toggleClass('icon-chevron-up icon-chevron-down');
+	});
+
+	clientName.keyup(function(e){
+		var charCode = e.charCode || e.keyCode;
+		if (charCode == 13) {
+			// disable Enter key
+			return false;
+		} else {
+			// publish new name
+			sess.publish("change-name", {
+				session: sess.sessionid(),
+				name: clientName.val()
+			});
+		}
+	});
+
 	colorPicker
 	.on('click', function() {
 		colorPicker.simplecolorpicker({picker: true});
@@ -591,13 +812,14 @@ $(document).ready(function(){
 		sess.publish("change-color", {
 			session: sess.sessionid(),
 			color: colorPicker.val()
-		}, true);
+		});
 	})
 	.trigger('click');
 
 
 
 
+/*****  INSERT YOUTUBE VIDEO  *****/
 	youtubeInput.css('right', $('#sidebar-right').outerWidth() - 40);
 	youtubeAddButton.click(function(){
 		// Animate the input field
@@ -622,7 +844,7 @@ $(document).ready(function(){
 		if (url != '') {
 			var id = youtube_id(url);
 			if (id) {
-				// create youtube video
+				// create video element
 				var file = {
 					name: id,
 					type: 'video/youtube'
@@ -643,7 +865,6 @@ $(document).ready(function(){
 		}
 	});
 
-	/* get youtube video id from url */
 	function youtube_id(url) {
 		var p = /^(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$/;
 		return (url.match(p)) ? RegExp.$1 : false;
@@ -656,8 +877,8 @@ $(document).ready(function(){
 			success: function (data) {
 				var element = md5(id);
 				var title = data.entry.title.$t;
-				if ($('#element-' + element).length) {
-					$('#element-' + element).find('.title').text(title);
+				if ($('#' + element).length) {
+					$('#' + element).find('.title').text(title);
 				}
 			}
 		});
