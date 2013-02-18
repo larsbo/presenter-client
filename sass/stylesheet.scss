@@ -326,6 +326,7 @@ a:focus, .btn:focus {
 		font-size: 10px;
 		line-height: 24px;
 		margin: 80px auto;
+		max-width: 500px;
 		padding: 23px 20px 20px 45px;
 		text-shadow: 0 1px 1px white;
 		@include radial-gradient(center, cover, rgba(white, .7) 0%, rgba(white, .1) 90%);

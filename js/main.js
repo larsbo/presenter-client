@@ -321,7 +321,7 @@ $(document).ready(function(){
 		case 'image/tiff':
 			type = 'image';
 			image = 'icon-picture';
-			content = '<img src="' + uploadDir + 'files/' + file.name + '" width="300" />';
+			content = '<img src="' + uploadDir + 'files/' + file.name + '" width="100%" />';
 			break;
 
 		case 'video/mp4':
@@ -329,26 +329,26 @@ $(document).ready(function(){
 		case 'video/webm':
 			type = 'video';
 			image = 'icon-film';
-			content = '<video src="' + uploadDir + 'files/' + file.name + '" width="320" height="200" controls preload></video>';
+			content = '<video src="' + uploadDir + 'files/' + file.name + '" width="100%" controls preload></video>';
 			break;
 
 		case 'audio/mpeg':
 		case 'audio/ogg':
 			type = 'audio';
 			image = 'icon-volume-up';
-			content = '<audio src="' + uploadDir + 'files/' + file.name + '" controls preload></audio>';
+			content = '<audio src="' + uploadDir + 'files/' + file.name + '" width="100%" controls preload></audio>';
 			break;
 
 		case 'video/youtube':
 			type = 'video';
 			image = 'icon-film';
-			content = '<iframe width="320" height="180" src="http://www.youtube.com/embed/' + file.name + '?autoplay=1&rel=0" frameborder="0" allowfullscreen></iframe><div class="clearfix"></div>';
+			content = '<iframe width="100%" height="95%" src="http://www.youtube.com/embed/' + file.name + '?autoplay=1&rel=0" frameborder="0" allowfullscreen></iframe><div class="clearfix"></div>';
 			break;
 
 		case 'application/pdf':
 			type = 'pdf';
 			image = 'icon-file';
-			content = '<object data="' + uploadDir + 'files/' + file.name + '" type="application/pdf" width="480" height="320"><p>Kein PDF-Plugin vorhanden! <a href="' + uploadDir + 'files/' + file.name + '">PDF-Datei speichern</a></p></object>';
+			content = '<object data="' + uploadDir + 'files/' + file.name + '" type="application/pdf" width="400" height="300"><p>Kein PDF-Plugin vorhanden! <a href="' + uploadDir + 'files/' + file.name + '">PDF-Datei speichern</a></p></object>';
 			break;
 
 		case 'text/plain':
@@ -383,7 +383,6 @@ $(document).ready(function(){
 		}
 		element.css('z-index', file.index);
 
-		console.log(file);
 		if (file.index !== undefined || file.rotation !== undefined) {
 			changeRotationScale(file);
 		}
@@ -404,6 +403,11 @@ $(document).ready(function(){
 
 		// make element rotateable & scaleable
 		enableRotationScale(element);
+
+		// make element resizeable by mouse
+		element.resizable({
+			 aspectRatio: true
+		});
 
 		// update file list & element counter
 		fileContainer.trigger('updateFileList');
@@ -726,6 +730,8 @@ $(document).ready(function(){
 			console.log(this);
 		}
 	});
+
+
 
 
 
