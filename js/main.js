@@ -552,7 +552,6 @@ $(document).ready(function(){
 
 		container = container.hammer({
 			prevent_default: true,
-			scale_treshold: 0,
 			drag_min_distance: 0
 		});
 
