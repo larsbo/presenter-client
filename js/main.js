@@ -698,18 +698,19 @@ $(document).ready(function(){
 				data.context.hide();
 
 				// append element to surface & file list & return position and element id
-				var info = appendElement(file);
+				appendElement(file);
 
 				// publish 'add element' if connected
 				if (sess && sess._websocket_connected) {
+					var position = $('#' + file.id).offset();
 					sess.publish("add", {
 						session: sess.sessionid(),
-						id: info.id,
+						id: file.id,
 						name: file.name,
 						type: file.type,
-						left: info.left,
-						top: info.top,
-						index: info.index,
+						left: position.left,
+						top: position.top,
+						index: file.index,
 						rotation: 0,	// default rotation: 0
 						scale: 1			// default scale: 1
 					});
