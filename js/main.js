@@ -1,4 +1,4 @@
-var sess, msg, ip, uploader;
+var sess, msg, ip, uploadDir;
 
 $(document).ready(function(){
 
@@ -12,7 +12,8 @@ $(document).ready(function(){
 		event.preventDefault();
 	}, false);
 
-	var uploadDir = 'http://localhost/PresenterServer/upload/';
+	var local = 'localhost';
+	var uploadPath = '/PresenterServer/upload/';
 
 	var bar = $('#bar');
 	var connectForm = $('#connect-form');
@@ -42,6 +43,93 @@ $(document).ready(function(){
 		elementContainer.css('height', $(document.body).height() - 57);
 	}).resize();
 
+	// initialize upload script
+	initializeFileUpload(local, uploadPath);
+
+
+	/*elementContainer.hammer()
+	.on("tap", ".element", function(event) {
+		console.log(this, event);
+	});*/
+
+
+	elementContainer.hammer({
+		transform_always_block: true,
+		transform_min_scale: 1,
+		drag_block_horizontal: true,
+		drag_block_vertical: true,
+		drag_min_distance: 0
+	})
+	.on('touch drag transform', function(ev) {
+		ev.gesture.preventDefault();
+
+		var posX=0, posY=0,
+				scale=1, last_scale,
+				rotation=1, last_rotation;
+		var target;
+
+		switch(ev.type) {
+		case 'touch':
+			target = ev.gesture.target;
+			last_scale = scale;
+			last_rotation = rotation;
+			break;
+
+		case 'drag':
+			target = ev.gesture.target;
+			posX = ev.gesture.deltaX;
+			posY = ev.gesture.deltaY;
+			break;
+
+		case 'transform':
+			var touches = ev.gesture.touches;
+			// find element under touches
+			if (touches.length == 2 && touches[0].target == touches[1].target) {
+				target = $(ev.gesture.touches[0].target).parent();
+			}
+
+			rotation = last_rotation + ev.gesture.rotation;
+			scale = Math.max(1, Math.min(last_scale * ev.gesture.scale, 10));
+			break;
+		}
+		console.log(ev.type);
+
+		// transform!
+		var transform =
+			"translate3d("+posX+"px,"+posY+"px, 0) " +
+			"scale3d("+scale+","+scale+", 0) " +
+			"rotate("+rotation+"deg) ";
+
+		target.style.transform = transform;
+		target.style.oTransform = transform;
+		target.style.msTransform = transform;
+		target.style.mozTransform = transform;
+		target.style.webkitTransform = transform;
+	});
+
+
+	/*****  hammer.js dragging  *****/
+	/*elementContainer.hammer({
+		drag_max_touches:0
+	})
+	.on("touch drag", ".element", function(ev) {
+		var touches = ev.gesture.touches;
+
+		ev.gesture.preventDefault();
+
+		for(var t=0,len=touches.length; t<len; t++) {
+			var target = $(touches[t].target).parent();
+			var width = target.outerWidth();
+			var height = target.outerHeight();
+
+			target.css({
+				zIndex: 1337,
+				left: touches[t].pageX-(width/2),
+				top: touches[t].pageY-(height/2)
+			});
+		}
+	});*/
+
 
 /*****  WEB SOCKET SERVER COMMUNICATION  *****/
 
@@ -69,6 +157,10 @@ $(document).ready(function(){
 			sess.publish("connect", {
 				session: sess.sessionid()
 			});
+
+			// re-initialize upload script with connected server
+			//uploadInput.fileupload('destroy');
+			initializeFileUpload(server, '/upload/');
 
 			// publish current elements
 			var elements = getElements();
@@ -378,15 +470,16 @@ $(document).ready(function(){
 			top: file.top
 		});
 
+		// set index
 		if (file.index === undefined) {
 			file.index = getMaxZIndex() + 1;
 		}
 		element.css('z-index', file.index);
 
+		// set rotation
 		if (file.index !== undefined || file.rotation !== undefined) {
 			changeRotationScale(file);
 		}
-
 
 		// add content of text files to element container
 		if (type == 'text') {
@@ -398,16 +491,18 @@ $(document).ready(function(){
 			});
 		}
 
-		// make element draggable
+/*
+		// make element draggable (jquery-ui)
 		enableDragging(element);
 
-		// make element rotateable & scaleable
+		// make element rotateable & scaleable (hammer.js)
 		enableRotationScale(element);
 
-		// make element resizeable by mouse
+		// make element resizeable by mouse (jquery-ui)
 		element.resizable({
 			 aspectRatio: true
 		});
+*/
 
 		// update file list & element counter
 		fileContainer.trigger('updateFileList');
@@ -663,61 +758,64 @@ $(document).ready(function(){
 
 
 /*****  DRAG & DROP FILE UPLOAD  *****/
-	uploader = uploadInput.fileupload({
-		acceptFileTypes: /(\.|\/)(gif|jpe?g|png|bmp)$/i,
-		autoUpload: false,
-		dataType: 'json',
-		url: uploadDir,
-
-		// dropped file
-		add: function(e, data) {
-			var file = data.files[0];
-			var message = notifyContainer.notify({
-				message: { html: "<small>Datei wird geladen...</small><div class=\"progress progress-striped active\"><div class=\"bar\"></div></div>" },
-				fadeOut: { enabled: false }
-			});
-			message.show();
-			data.context = message;
-			data.submit();
-		},
-
-		// transfering file
-		progress: function(e, data) {
-			var progress = parseInt(data.loaded / data.total * 100, 10);
-			data.context.$element.find('.bar').css(
-				'width',
-				progress + '%'
-			);
-		},
-
-		// upload finished
-		done: function(e, data) {
-			$.each(data.result.files, function (index, file) {
-
-				// remove upload message
-				data.context.hide();
-
-				// append element to surface & file list & return position and element id
-				appendElement(file);
-
-				// publish 'add element' if connected
-				if (sess && sess._websocket_connected) {
-					var position = $('#' + file.id).offset();
-					sess.publish("add", {
-						session: sess.sessionid(),
-						id: file.id,
-						name: file.name,
-						type: file.type,
-						left: position.left,
-						top: position.top,
-						index: file.index,
-						rotation: 0,	// default rotation: 0
-						scale: 1			// default scale: 1
-					});
-				}
-			});
-		}
-	});
+	function initializeFileUpload(server, path) {
+		uploadDir = 'http://' + server + path;
+		return uploadInput.fileupload({
+			acceptFileTypes: /(\.|\/)(gif|jpe?g|png|bmp)$/i,
+			autoUpload: false,
+			dataType: 'json',
+			url: uploadDir,
+	
+			// dropped file
+			add: function(e, data) {
+				var file = data.files[0];
+				var message = notifyContainer.notify({
+					message: { html: "<small>Datei wird geladen...</small><div class=\"progress progress-striped active\"><div class=\"bar\"></div></div>" },
+					fadeOut: { enabled: false }
+				});
+				message.show();
+				data.context = message;
+				data.submit();
+			},
+	
+			// transfering file
+			progress: function(e, data) {
+				var progress = parseInt(data.loaded / data.total * 100, 10);
+				data.context.$element.find('.bar').css(
+					'width',
+					progress + '%'
+				);
+			},
+	
+			// upload finished
+			done: function(e, data) {
+				$.each(data.result.files, function (index, file) {
+	
+					// remove upload message
+					data.context.hide();
+	
+					// append element to surface & file list & return position and element id
+					appendElement(file);
+	
+					// publish 'add element' if connected
+					if (sess && sess._websocket_connected) {
+						var position = $('#' + file.id).offset();
+						sess.publish("add", {
+							session: sess.sessionid(),
+							id: file.id,
+							name: file.name,
+							type: file.type,
+							left: position.left,
+							top: position.top,
+							index: file.index,
+							rotation: 0,	// default rotation: 0
+							scale: 1			// default scale: 1
+						});
+					}
+				});
+			}
+		});
+	};
 
 
 

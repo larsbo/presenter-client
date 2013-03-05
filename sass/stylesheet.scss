@@ -310,7 +310,7 @@ a:focus, .btn:focus {
 	&.image {
 		cursor: pointer;
 		&:hover, &.hover, &.active {
-			@include transform(scale(1.05));
+			//@include transform(scale(1.05));
 		}
 	}
 

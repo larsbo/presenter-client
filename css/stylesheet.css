@@ -271,12 +271,6 @@ a:focus, .btn:focus {
     border-style: solid; }
   .element.image {
     cursor: pointer; }
-    .element.image:hover, .element.image.hover, .element.image.active {
-      -webkit-transform: scale(1.05);
-      -moz-transform: scale(1.05);
-      -ms-transform: scale(1.05);
-      -o-transform: scale(1.05);
-      transform: scale(1.05); }
   .element.text {
     background-color: #f2f6c1;
     border: 1px solid #c3baaa;
