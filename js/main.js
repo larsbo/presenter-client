@@ -1,4 +1,14 @@
 var sess, msg, ip, uploadDir;
+var local = 'localhost';
+var uploadPath = '/PresenterServer/upload/';
+var touchOffsets = [];
+var scales = [];
+
+function round(x) {
+	var k = (Math.round(x * 100) / 100).toString();
+	k += (k.indexOf('.') == -1)? '.00' : '00';
+	return k.substring(0, k.indexOf('.') + 3);
+}
 
 $(document).ready(function(){
 
@@ -7,14 +17,13 @@ $(document).ready(function(){
 		event.preventDefault();
 	}, false);
 
-	// diable default firefox image dragging to open it
+	// disable default firefox image dragging to open it
 	document.body.addEventListener('dragstart', function(event) {
 		event.preventDefault();
 	}, false);
 
-	var local = 'localhost';
-	var uploadPath = '/PresenterServer/upload/';
 
+	// initialize some jquery variables
 	var bar = $('#bar');
 	var connectForm = $('#connect-form');
 	var disconnectForm = $('#disconnect-form');
@@ -38,97 +47,226 @@ $(document).ready(function(){
 	var colorPicker = $('#colorpicker');
 	var trash = $('#trash');
 
-	// set element container's height
+	// set element container's height = window height - topbar height
 	$(window).resize(function() {
-		elementContainer.css('height', $(document.body).height() - 57);
+		elementContainer.css('height', $(document.body).height() - bar.outerHeight() - 20);
 	}).resize();
+
 
 	// initialize upload script
 	initializeFileUpload(local, uploadPath);
 
 
-	/*elementContainer.hammer()
-	.on("tap", ".element", function(event) {
-		console.log(this, event);
-	});*/
+/*****  TOUCH GESTURES  *****/
 
+	/*function dragFix(event, ui) {
+		var changeLeft = ui.position.left - ui.originalPosition.left; // find change in left
+		var newLeft = ui.originalPosition.left + changeLeft / zoomScale; // adjust new left by our zoomScale
+	
+		var changeTop = ui.position.top - ui.originalPosition.top; // find change in top
+		var newTop = ui.originalPosition.top + changeTop / zoomScale; // adjust new top by our zoomScale
+	
+		ui.position.left = newLeft;
+		ui.position.top = newTop;
+	}*/
 
 	elementContainer.hammer({
-		transform_always_block: true,
-		transform_min_scale: 1,
+
+		// dragging options:
 		drag_block_horizontal: true,
 		drag_block_vertical: true,
-		drag_min_distance: 0
-	})
-	.on('touch drag transform', function(ev) {
-		ev.gesture.preventDefault();
+		drag_max_touches: 0,				// number of allowed parallel touch events (0 = unlimited)
 
-		var posX=0, posY=0,
-				scale=1, last_scale,
-				rotation=1, last_rotation;
-		var target;
+		// transformation (scale & rotation) options:
+		transform_always_block: true,
+		//transform_min_scale: 1,
+		//transform_min_rotation: 1
+	})
+
+
+	/***  START DRAGGING  ***/
+	.on('touch dragstart', '.element', function(ev) {
+		ev.stopPropagation();
+
+		if (ev.gesture === undefined) {
+			// catch not well defined gestures
+			ev.preventDefault();
+		} else {
+			ev.gesture.preventDefault();
+			var touches = ev.gesture.touches;
+
+			for (var t=0,len=touches.length; t<len; t++) {
+				var touch = touches[t];
+				var target = (touch.target.nodeName === 'DIV') ? $(touch.target) : $(touch.target).parents('.element');
+				var pos = target.position();
+				var index = target.prop('id');
+
+				// compute scale offset fix (because the unscaled element dimensions are used by position(), width() & height())
+				//var scaleOffsetLeft = target.data('rescale') ? (target.width() - target.data('rescale').width) : 0;
+				//var scaleOffsetTop = target.data('rescale') ? (target.height() - target.data('rescale').height) : 0;
+				//var scale = (scales[index] === undefined) ? 1 : 1/scales[index];
+
+				// store element position in global array for offset computation during dragging
+				touchOffsets[index] = {};
+				touchOffsets[index].x = touch.pageX - pos.left + parseInt(target.css('padding-left'), 10);
+				touchOffsets[index].y = touch.pageY - pos.top + parseInt(target.css('padding-top'), 10);
+
+				//console.log('offset: ' + pos.left + ':' + pos.top);
+				//console.log('minus: ' + round(scaleOffsetLeft) + ':' + round(scaleOffsetTop));
+				//console.log('fixed: ' + (pos.left - scaleOffsetTop) + ':' + (pos.top - scaleOffsetTop));
+			}
+		}
+	})
+
+
+	/***  WHILE DRAGGING  ***/
+	.on('touch drag', '.element', function(ev) {
+		ev.stopPropagation();
+
+		if (ev.gesture === undefined) {
+			// catch not well defined gestures
+			ev.preventDefault();
+		} else {
+			ev.gesture.preventDefault();
+			var touches = ev.gesture.touches;
+
+			for (var t=0,len=touches.length; t<len; t++) {
+				var touch = touches[t];
+				var target = (touch.target.nodeName === 'DIV') ? $(touch.target) : $(touch.target).parents('.element');
+				var index = target.prop('id');
+
+				// compute scale offset fix (because the unscaled element dimensions are used by position(), width() & height())
+				var scaleOffsetLeft = target.data('rescale') ? (target.width() - target.data('rescale').width) : 0;
+				var scaleOffsetTop = target.data('rescale') ? (target.height() - target.data('rescale').height) : 0;
+				var scale = (scales[index] === undefined) ? 1 : 1/scales[index];
+
+				var posX = touch.pageX - touchOffsets[index].x * scale;
+				var posY = touch.pageY - touchOffsets[index].y * scale;
+
+				console.log('scale offset: ' + round(scaleOffsetLeft) + ' - ' + round(scaleOffsetTop));
+				console.log('scale: ' + round(scale));
+				console.log('position: ' + round(posX) + ' - ' + round(posY));
+
+				//console.log('minus: ' + round(scaleOffsetLeft) + ':' + round(scaleOffsetTop));
+				//console.log('fixed: ' + (pos.left - scaleOffsetTop) + ':' + (pos.top - scaleOffsetTop));
+
+				// update elements position
+				target
+				.css({
+					translate: [posX, posY]
+				});
+
+				//console.log('move to ' + translateX + ':' + translateY);
+			}
+		}
+	})
+
+
+	/***  SCALE  ***/
+	.on('pinch', '.element', function(ev) {
+		ev.stopPropagation();
+
+		if (ev.gesture === undefined) {
+			// catch not well defined gestures
+			ev.preventDefault();
+		} else {
+			ev.gesture.preventDefault();
+			var touches = ev.gesture.touches;
+
+			// check if we two touch events on the same element found ->
+			if (touches.length == 2 && touches[0].target == touches[1].target) {
+
+				var target = $(ev.gesture.touches[0].target).parent();
+				var index = target.prop('id');
+				var lastScale = (scales[index] === undefined) ? 1 : scales[index];
+				var scale = lastScale * ev.gesture.scale;
+
+				// update elements size
+				target
+					.data('rescale', {
+						width: target.width() * scale,
+						height: target.height() * scale
+					})
+					.css({
+						scale: scale
+					});
+
+				// store element scale in global array for offset computation during dragging
+				scales[index] = scale;
+
+				console.log('ev.gesture.scale: ' + ev.gesture.scale + ', scale: ' + scale);
+			}
+		}
+	})
+
+	.on('pinchout', '.element', function(ev) {
+		ev.stopPropagation();
+		console.log('pinch out!');
+	});
+
+
+
+/*
+		var positionX = ev.gesture.deltaX,
+				positionY =  ev.gesture.deltaY,
+				scale = ev.gesture.scale,
+				rotation = ev.gesture.rotation,
+				lastPositionX, lastPositionY, lastScale, last_rotation,
+				target, transform,
+				touches = ev.gesture.touches;
+
+		console.log(ev.type, positionX, positionY, scale, rotation);
+		console.log(ev.gesture);
 
 		switch(ev.type) {
 		case 'touch':
-			target = ev.gesture.target;
-			last_scale = scale;
-			last_rotation = rotation;
+			target = (ev.gesture.target == 'div') ? ev.gesture.target : $(ev.gesture.target).parents('.element')[0];
+
+			target.getScale
+
+			lastScale = scale;
+			lastRotation = rotation;
 			break;
 
 		case 'drag':
-			target = ev.gesture.target;
-			posX = ev.gesture.deltaX;
-			posY = ev.gesture.deltaY;
+			target = (ev.gesture.target == 'div') ? ev.gesture.target : $(ev.gesture.target).parents('.element')[0];
+
+			positionX = lastPositionX || ev.gesture.deltaX;
+			positionY = lastPositionY || ev.gesture.deltaY;
+			break;
+
+		case 'dragend':
+			target = (ev.gesture.target == 'div') ? ev.gesture.target : $(ev.gesture.target).parents('.element')[0];
+
+			lastPositionX = ev.gesture.deltaX;
+			lastPositionY = ev.gesture.deltaY;
 			break;
 
 		case 'transform':
-			var touches = ev.gesture.touches;
-			// find element under touches
 			if (touches.length == 2 && touches[0].target == touches[1].target) {
+				// double touch event on same element
 				target = $(ev.gesture.touches[0].target).parent();
-			}
 
-			rotation = last_rotation + ev.gesture.rotation;
-			scale = Math.max(1, Math.min(last_scale * ev.gesture.scale, 10));
+				rotation = lastRotation + ev.gesture.rotation;
+				scale = Math.max(1, Math.min(lastScale * ev.gesture.scale, 10));
+			}
 			break;
 		}
-		console.log(ev.type);
 
 		// transform!
-		var transform =
-			"translate3d("+posX+"px,"+posY+"px, 0) " +
-			"scale3d("+scale+","+scale+", 0) " +
-			"rotate("+rotation+"deg) ";
+		transform =
+			"translate3d(" + positionX + "px," + positionY + "px, 0) " +
+			"scale3d(" + scale + "," + scale + ", 1) " +
+			"rotate(" + rotation + "deg) ";
+
+		//console.log(target);
 
 		target.style.transform = transform;
 		target.style.oTransform = transform;
 		target.style.msTransform = transform;
 		target.style.mozTransform = transform;
 		target.style.webkitTransform = transform;
-	});
-
-
-	/*****  hammer.js dragging  *****/
-	/*elementContainer.hammer({
-		drag_max_touches:0
-	})
-	.on("touch drag", ".element", function(ev) {
-		var touches = ev.gesture.touches;
-
-		ev.gesture.preventDefault();
-
-		for(var t=0,len=touches.length; t<len; t++) {
-			var target = $(touches[t].target).parent();
-			var width = target.outerWidth();
-			var height = target.outerHeight();
-
-			target.css({
-				zIndex: 1337,
-				left: touches[t].pageX-(width/2),
-				top: touches[t].pageY-(height/2)
-			});
-		}
-	});*/
+*/
 
 
 /*****  WEB SOCKET SERVER COMMUNICATION  *****/
@@ -160,7 +298,11 @@ $(document).ready(function(){
 
 			// re-initialize upload script with connected server
 			//uploadInput.fileupload('destroy');
-			initializeFileUpload(server, '/upload/');
+			if (server == 'localhost') {
+				initializeFileUpload(server, '/PresenterServer/upload/');
+			} else {
+				initializeFileUpload(server, '/upload/');
+			}
 
 			// publish current elements
 			var elements = getElements();
@@ -461,6 +603,7 @@ $(document).ready(function(){
 
 		// add element to surface
 		var element = $('<div class="element ' + type + '" id="' + file.id + '" data-type="' + file.type + '">' + content + '<div class="title">' + file.name + '</div></div>');
+
 		element
 		.appendTo(elementContainer)
 
@@ -474,11 +617,13 @@ $(document).ready(function(){
 		if (file.index === undefined) {
 			file.index = getMaxZIndex() + 1;
 		}
-		element.css('z-index', file.index);
+		element.css({
+			'z-index': file.index
+		});
 
 		// set rotation
 		if (file.index !== undefined || file.rotation !== undefined) {
-			changeRotationScale(file);
+			//changeRotationScale(file);
 		}
 
 		// add content of text files to element container
@@ -830,9 +975,6 @@ $(document).ready(function(){
 	});
 
 
-
-
-
 /*****  FILE LIST INTERACTION  *****/
 	fileContainer
 	.on('mouseenter', 'dd', function(event) {
@@ -843,16 +985,7 @@ $(document).ready(function(){
 		$('#' + $(this).data('id')).removeClass('hover').css('background-color', '')
 	})
 	.on('click', 'dd', function(event) {
-		var el = $(this);
-		var color = colorPicker.val();
-
-		if (el.hasClass('checked')) {
-			el.removeClass('checked');
-			$('#' + el.data('id')).removeClass('active').css('background-color', color);
-		} else {
-			el.addClass('checked');
-			$('#' + el.data('id')).addClass('active').css('border-color', color);
-		}
+		toggleColor($(this));
 	})
 	.on('click', 'button', function(event) {
 		removeFile($(this).parent());
