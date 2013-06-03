@@ -1,14 +1,26 @@
 var sess, msg, ip, uploadDir;
+var elements = {};		// object to store information about every element
 var local = 'localhost';
 var uploadPath = '/PresenterServer/upload/';
-var touchOffsets = [];
-var scales = [];
+var minimalScale = 0.5;
 
 function round(x) {
 	var k = (Math.round(x * 100) / 100).toString();
 	k += (k.indexOf('.') == -1)? '.00' : '00';
 	return k.substring(0, k.indexOf('.') + 3);
 }
+
+
+if(!Hammer.HAS_TOUCHEVENTS && !Hammer.HAS_POINTEREVENTS) {
+	Hammer.plugins.showTouches();
+}
+
+if(!Hammer.HAS_TOUCHEVENTS && !Hammer.HAS_POINTEREVENTS) {
+	Hammer.plugins.fakeMultitouch();
+}
+
+Hammer.plugins.showTouches();
+Hammer.plugins.fakeMultitouch();
 
 $(document).ready(function(){
 
@@ -36,6 +48,7 @@ $(document).ready(function(){
 	var clientContainer = $('#client-container');
 	var elementContainer = $('#element-container');
 
+	var sidebarRight = $('#sidebar-right');
 	var fileContainer = $('#file-container');
 	var uploadInput = $('#upload-input');
 	var youtubeAddButton = $('#youtube-add-button');
@@ -46,6 +59,7 @@ $(document).ready(function(){
 	var backgroundChanger = $('#background-changer');
 	var colorPicker = $('#colorpicker');
 	var trash = $('#trash');
+
 
 	// set element container's height = window height - topbar height
 	$(window).resize(function() {
@@ -58,18 +72,6 @@ $(document).ready(function(){
 
 
 /*****  TOUCH GESTURES  *****/
-
-	/*function dragFix(event, ui) {
-		var changeLeft = ui.position.left - ui.originalPosition.left; // find change in left
-		var newLeft = ui.originalPosition.left + changeLeft / zoomScale; // adjust new left by our zoomScale
-	
-		var changeTop = ui.position.top - ui.originalPosition.top; // find change in top
-		var newTop = ui.originalPosition.top + changeTop / zoomScale; // adjust new top by our zoomScale
-	
-		ui.position.left = newLeft;
-		ui.position.top = newTop;
-	}*/
-
 	elementContainer.hammer({
 
 		// dragging options:
@@ -79,194 +81,101 @@ $(document).ready(function(){
 
 		// transformation (scale & rotation) options:
 		transform_always_block: true,
-		//transform_min_scale: 1,
-		//transform_min_rotation: 1
+		transform_min_scale: 1,
+		transform_min_rotation: 1
 	})
 
 
 	/***  START DRAGGING  ***/
-	.on('touch dragstart', '.element', function(ev) {
+	.on('touch dragstart drag dragend transform', '.element', function(ev) {
 		ev.stopPropagation();
 
+		// catch not well defined gestures
 		if (ev.gesture === undefined) {
-			// catch not well defined gestures
 			ev.preventDefault();
-		} else {
-			ev.gesture.preventDefault();
-			var touches = ev.gesture.touches;
-
-			for (var t=0,len=touches.length; t<len; t++) {
-				var touch = touches[t];
-				var target = (touch.target.nodeName === 'DIV') ? $(touch.target) : $(touch.target).parents('.element');
-				var pos = target.position();
-				var index = target.prop('id');
-
-				// compute scale offset fix (because the unscaled element dimensions are used by position(), width() & height())
-				//var scaleOffsetLeft = target.data('rescale') ? (target.width() - target.data('rescale').width) : 0;
-				//var scaleOffsetTop = target.data('rescale') ? (target.height() - target.data('rescale').height) : 0;
-				//var scale = (scales[index] === undefined) ? 1 : 1/scales[index];
-
-				// store element position in global array for offset computation during dragging
-				touchOffsets[index] = {};
-				touchOffsets[index].x = touch.pageX - pos.left + parseInt(target.css('padding-left'), 10);
-				touchOffsets[index].y = touch.pageY - pos.top + parseInt(target.css('padding-top'), 10);
-
-				//console.log('offset: ' + pos.left + ':' + pos.top);
-				//console.log('minus: ' + round(scaleOffsetLeft) + ':' + round(scaleOffsetTop));
-				//console.log('fixed: ' + (pos.left - scaleOffsetTop) + ':' + (pos.top - scaleOffsetTop));
-			}
+			return false;
 		}
-	})
 
+		// stop default click/touch behaviour
+		ev.gesture.preventDefault();
 
-	/***  WHILE DRAGGING  ***/
-	.on('touch drag', '.element', function(ev) {
-		ev.stopPropagation();
+		// get touches
+		var touches = ev.gesture.touches;
+		var touchLength = touches.length;
 
-		if (ev.gesture === undefined) {
-			// catch not well defined gestures
-			ev.preventDefault();
-		} else {
-			ev.gesture.preventDefault();
-			var touches = ev.gesture.touches;
+		// get target
+		var currentTarget = $(ev.currentTarget);
+		var currentID = currentTarget.prop('id');
 
-			for (var t=0,len=touches.length; t<len; t++) {
-				var touch = touches[t];
-				var target = (touch.target.nodeName === 'DIV') ? $(touch.target) : $(touch.target).parents('.element');
-				var index = target.prop('id');
+		// iterate over all touches
+		for (var t=0; t<touchLength; t++) {
+			var touch = touches[t];
+			var target = (touch.target.nodeName === 'DIV') ? $(touch.target) : $(touch.target).parents('.element');
+			var el = target.prop('id');
 
-				// compute scale offset fix (because the unscaled element dimensions are used by position(), width() & height())
-				var scaleOffsetLeft = target.data('rescale') ? (target.width() - target.data('rescale').width) : 0;
-				var scaleOffsetTop = target.data('rescale') ? (target.height() - target.data('rescale').height) : 0;
-				var scale = (scales[index] === undefined) ? 1 : 1/scales[index];
+			// only use touch events related to current target
+			if (el === currentID) {
 
-				var posX = touch.pageX - touchOffsets[index].x * scale;
-				var posY = touch.pageY - touchOffsets[index].y * scale;
+				switch(ev.type) {
 
-				console.log('scale offset: ' + round(scaleOffsetLeft) + ' - ' + round(scaleOffsetTop));
-				console.log('scale: ' + round(scale));
-				console.log('position: ' + round(posX) + ' - ' + round(posY));
+				case 'touch':
+					elements[el].lastScale = elements[el].scale;
+					elements[el].lastRotation = elements[el].rotation;
+					break;
 
-				//console.log('minus: ' + round(scaleOffsetLeft) + ':' + round(scaleOffsetTop));
-				//console.log('fixed: ' + (pos.left - scaleOffsetTop) + ':' + (pos.top - scaleOffsetTop));
-
-				// update elements position
-				target
-				.css({
-					translate: [posX, posY]
-				});
-
-				//console.log('move to ' + translateX + ':' + translateY);
-			}
-		}
-	})
-
-
-	/***  SCALE  ***/
-	.on('pinch', '.element', function(ev) {
-		ev.stopPropagation();
-
-		if (ev.gesture === undefined) {
-			// catch not well defined gestures
-			ev.preventDefault();
-		} else {
-			ev.gesture.preventDefault();
-			var touches = ev.gesture.touches;
-
-			// check if we two touch events on the same element found ->
-			if (touches.length == 2 && touches[0].target == touches[1].target) {
-
-				var target = $(ev.gesture.touches[0].target).parent();
-				var index = target.prop('id');
-				var lastScale = (scales[index] === undefined) ? 1 : scales[index];
-				var scale = lastScale * ev.gesture.scale;
-
-				// update elements size
-				target
-					.data('rescale', {
-						width: target.width() * scale,
-						height: target.height() * scale
-					})
-					.css({
-						scale: scale
+				case 'drag-start':
+					currentTarget.css({
+						'z-index': getMaxZIndex() + 1
 					});
+					break;
 
-				// store element scale in global array for offset computation during dragging
-				scales[index] = scale;
+				case 'drag':
+					elements[el].position.x = ev.gesture.deltaX + elements[el].lastPosition.x;
+					elements[el].position.y = ev.gesture.deltaY + elements[el].lastPosition.y;
+					break;
 
-				console.log('ev.gesture.scale: ' + ev.gesture.scale + ', scale: ' + scale);
+				case 'transform':
+
+					// check for another touch event on this element
+					for (var i=0; i<touchLength; i++) {
+						if (i != t) {
+							var secondTarget = (touches[i].target.nodeName === 'DIV') ? $(touches[i].target) : $(touches[i].target).parents('.element');
+							if (secondTarget.prop('id') === el) {
+								elements[el].rotation = ev.gesture.rotation + elements[el].lastRotation;
+								elements[el].scale = Math.max(minimalScale, Math.min(elements[el].lastScale * ev.gesture.scale, 10));
+							}
+						}
+					}
+					break;
+
+				case 'dragend':
+					elements[el].lastPosition.x = elements[el].position.x;
+					elements[el].lastPosition.y = elements[el].position.y;
+					break;
+
+				}
+
+				// set element properties
+				target.css({
+					rotate: elements[el].rotation,
+					scale: elements[el].scale,
+					x: elements[el].position.x,
+					y: elements[el].position.y
+				});
 			}
 		}
 	})
 
-	.on('pinchout', '.element', function(ev) {
-		ev.stopPropagation();
-		console.log('pinch out!');
+	.on('hold', '.element', function(ev) {
+		var el = $(ev.currentTarget);
+		fileContainer.find('dd').each(function(i, element){
+			if ($(this).data('id') === el.prop('id')) {
+				toggleElement($(this));
+				return;
+			}
+		});
 	});
 
-
-
-/*
-		var positionX = ev.gesture.deltaX,
-				positionY =  ev.gesture.deltaY,
-				scale = ev.gesture.scale,
-				rotation = ev.gesture.rotation,
-				lastPositionX, lastPositionY, lastScale, last_rotation,
-				target, transform,
-				touches = ev.gesture.touches;
-
-		console.log(ev.type, positionX, positionY, scale, rotation);
-		console.log(ev.gesture);
-
-		switch(ev.type) {
-		case 'touch':
-			target = (ev.gesture.target == 'div') ? ev.gesture.target : $(ev.gesture.target).parents('.element')[0];
-
-			target.getScale
-
-			lastScale = scale;
-			lastRotation = rotation;
-			break;
-
-		case 'drag':
-			target = (ev.gesture.target == 'div') ? ev.gesture.target : $(ev.gesture.target).parents('.element')[0];
-
-			positionX = lastPositionX || ev.gesture.deltaX;
-			positionY = lastPositionY || ev.gesture.deltaY;
-			break;
-
-		case 'dragend':
-			target = (ev.gesture.target == 'div') ? ev.gesture.target : $(ev.gesture.target).parents('.element')[0];
-
-			lastPositionX = ev.gesture.deltaX;
-			lastPositionY = ev.gesture.deltaY;
-			break;
-
-		case 'transform':
-			if (touches.length == 2 && touches[0].target == touches[1].target) {
-				// double touch event on same element
-				target = $(ev.gesture.touches[0].target).parent();
-
-				rotation = lastRotation + ev.gesture.rotation;
-				scale = Math.max(1, Math.min(lastScale * ev.gesture.scale, 10));
-			}
-			break;
-		}
-
-		// transform!
-		transform =
-			"translate3d(" + positionX + "px," + positionY + "px, 0) " +
-			"scale3d(" + scale + "," + scale + ", 1) " +
-			"rotate(" + rotation + "deg) ";
-
-		//console.log(target);
-
-		target.style.transform = transform;
-		target.style.oTransform = transform;
-		target.style.msTransform = transform;
-		target.style.mozTransform = transform;
-		target.style.webkitTransform = transform;
-*/
 
 
 /*****  WEB SOCKET SERVER COMMUNICATION  *****/
@@ -486,7 +395,7 @@ $(document).ready(function(){
 		var files = [];
 		elementContainer.find('.element').each(function(i, element) {
 			var el = $(element);
-			var position = el.offset();
+			var position = el.position();
 
 			var file = {
 				id: el.prop('id'),
@@ -495,44 +404,12 @@ $(document).ready(function(){
 				left: position.left,
 				top: position.top,
 				index: el.css('z-index'),
-				rotation: getRotation(el),
-				scale: getScale(el)
+				rotation: el.css('rotation'),
+				scale: el.css('scale')
 			}
 			files.push(file);
 		});
 		return files;
-	}
-
-	function getRotation(el) {
-		var matrix = el.css("-webkit-transform") ||
-		el.css("-moz-transform") ||
-		el.css("-ms-transform") ||
-		el.css("-o-transform") ||
-		el.css("transform");
-
-		if (matrix !== 'none') {
-			var values = matrix.split('(')[1].split(')')[0].split(',');
-			var a = values[0];
-			var b = values[1];
-			return Math.round(Math.atan2(b, a) * (180/Math.PI));
-		}
-		return 0;
-	}
-
-	function getScale(el) {
-		var matrix = el.css("-webkit-transform") ||
-		el.css("-moz-transform") ||
-		el.css("-ms-transform") ||
-		el.css("-o-transform") ||
-		el.css("transform");
-
-		if (matrix !== 'none') {
-			var values = matrix.split('(')[1].split(')')[0].split(',');
-			var a = values[0];
-			var b = values[1];
-			return Math.sqrt(a*a + b*b);
-		}
-		return 1;
 	}
 
 	function appendElement(file) {
@@ -598,33 +475,54 @@ $(document).ready(function(){
 			content = '<i class="icon-question-sign"></i> Unbekannter Datentyp.<br>';
 		}
 
-		// add element to file list
-		$('<dd data-id="' + file.id + '" class="clearfix"><i class="' + image + '"></i><span class="title">' + file.name + '</span><button type="button" class="btn btn-mini btn-danger" title="entfernen"><i class="icon-remove"></i></button></dd>').appendTo(fileContainer);
-
-		// add element to surface
-		var element = $('<div class="element ' + type + '" id="' + file.id + '" data-type="' + file.type + '">' + content + '<div class="title">' + file.name + '</div></div>');
-
-		element
-		.appendTo(elementContainer)
-
-		// set position
-		.offset({
-			left: file.left,
-			top: file.top
-		});
-
-		// set index
+		// compute z-index if undefined
 		if (file.index === undefined) {
 			file.index = getMaxZIndex() + 1;
 		}
-		element.css({
+
+		// set rotation if undefined
+		if (file.rotation === undefined) {
+			file.rotation = 0;
+		}
+
+		// set scale if undefined
+		if (file.scale === undefined) {
+			file.scale = 1;
+		}
+
+		// add element to file list
+		$('<dd data-id="' + file.id + '" class="clearfix"><i class="' + image + '"></i><span class="title">' + file.name + '</span><div class="btn-group"><button type="button" class="btn btn-warning" title="reset"><i class="icon-refresh"></i></button><button type="button" class="btn btn-danger" title="entfernen"><i class="icon-remove"></i></button></dd>').appendTo(fileContainer);
+
+		// create element
+		var element = $('<div class="element ' + type + '" id="' + file.id + '" data-type="' + file.type + '">' + content + '<div class="title">' + file.name + '</div></div>');
+
+		// add element to surface
+		element
+		.appendTo(elementContainer)
+		.css({
+			rotate: file.rotation,
+			scale: file.scale,
+			x: file.left,
+			y: file.top,
 			'z-index': file.index
 		});
 
-		// set rotation
-		if (file.index !== undefined || file.rotation !== undefined) {
-			//changeRotationScale(file);
-		}
+		// insert element to collection for touch events
+		elements[file.id] = {
+			position: {
+				x: file.left,
+				y: file.top
+			},
+			lastPosition: {
+				x: 0,
+				y: 0
+			},
+			rotation: file.rotation,
+			lastRotation: 0,
+			scale: file.scale,
+			lastScale: 1
+		};
+
 
 		// add content of text files to element container
 		if (type == 'text') {
@@ -635,19 +533,6 @@ $(document).ready(function(){
 				$('#' + file.id).html(data.replace('\n', '<br>') + '<br><br><b>' + file.name + '</b>');
 			});
 		}
-
-/*
-		// make element draggable (jquery-ui)
-		enableDragging(element);
-
-		// make element rotateable & scaleable (hammer.js)
-		enableRotationScale(element);
-
-		// make element resizeable by mouse (jquery-ui)
-		element.resizable({
-			 aspectRatio: true
-		});
-*/
 
 		// update file list & element counter
 		fileContainer.trigger('updateFileList');
@@ -682,10 +567,9 @@ $(document).ready(function(){
 	function changePosition(data) {
 		var el = $('#' + data.id);
 		if (el.length) {
-			el
-			.offset({
-				left: data.left,
-				top: data.top
+			el.css({
+				x: data.left,
+				y: data.top
 			});
 		}
 	};
@@ -701,10 +585,8 @@ $(document).ready(function(){
 		var el = $('#' + data.id);
 		if (el.length) {
 			el.css({
-				webkitTransform: 'rotate(' + data.rotation + 'deg) scale(' + data.scale + ')',
-				webkitTransformOrigin: data.origin,
-				transform: 'rotate(' + data.rotation + 'deg) scale(' + data.scale + ')',
-				transformOrigin: data.origin,
+				rotate: data.rotation,
+				scale: data.scale
 			});
 		}
 	};
@@ -729,6 +611,18 @@ $(document).ready(function(){
 		});
 	};
 
+	function toggleElement(el) {
+		var color = colorPicker.val();
+
+		if (el.hasClass('checked')) {
+			el.removeClass('checked');
+			$('#' + el.data('id')).removeClass('active').css('background-color', color);
+		} else {
+			el.addClass('checked');
+			$('#' + el.data('id')).addClass('active').css('border-color', color);
+		}
+	};
+
 	function getMaxZIndex() {
 		var maxIndex = 0;
 		elementContainer.find('.element').each(function(){
@@ -741,6 +635,7 @@ $(document).ready(function(){
 	};
 
 /*****  ELEMENT DRAGGING  *****/
+/*
 	function enableDragging(element) {
 		element.draggable({
 			start: function() {
@@ -783,122 +678,7 @@ $(document).ready(function(){
 			// don't resize the surface
 			scroll: false
 		});
-	};
-
-
-
-/*****  ELEMENT ROTATION & SCALE  *****/
-	function enableRotationScale(container) {
-
-		container = container.hammer({
-			prevent_default: true,
-			drag_min_distance: 0
-		});
-
-		//console.log(container);
-		var id = container.prop('id');
-
-		var displayWidth = container.width();
-		var displayHeight = container.height();
-
-		// specify the minimum and maximum zoom
-		var MIN_ZOOM = 0.5;
-		var MAX_ZOOM = 3;
-
-		var scaleFactor = 1;
-		var previousScaleFactor = 1;
-
-		// keep track of the X and Y coordinate of the finger when it first touches the screen.
-		var startX = 0;
-		var startY = 0;
-
-		// keep track of the amount we need to translate the canvas along the X and the Y coordinate.
-		var translateX = 0;
-		var translateY = 0;
-
-		// keep track of the amount we translated the X and Y coordinates, the last time we panned.
-		var previousTranslateX = 0;
-		var previousTranslateY = 0;
-
-		// translate Origin variables
-		var tch1 = 0, 
-				tch2 = 0, 
-				tcX = 0, 
-				tcY = 0,
-				toX = 0,
-				toY = 0,
-				cssOrigin = "";
-
-		function transform(e) {
-			//scale width & height by the same amount
-			var cssScale = 'scale(' + scaleFactor + ') rotate(' + e.rotation + 'deg)';
-
-			container.css({
-				webkitTransform: cssScale,
-				webkitTransformOrigin: cssOrigin,
-				transform: cssScale,
-				transformOrigin: cssOrigin,
-			});
-		};
-
-		container.bind('transformstart', function(event){
-			// save the initial midpoint of the first two touches to say where our transform origin is.
-			e = event;
-
-			tch1 = [e.touches[0].x, e.touches[0].y];
-			tch2 = [e.touches[1].x, e.touches[1].y];
-
-			tcX = (tch1[0] + tch2[0]) / 2;
-			tcY = (tch1[1] + tch2[1]) / 2;
-
-			toX = tcX;
-			toY = tcY;
-
-			var left = container.offset().left;
-			var top = container.offset().top;
-
-			cssOrigin = (-(left) + toX) / scaleFactor + 'px ' + (-(top) + toY) / scaleFactor + 'px';
-		});
-
-		container.bind('transform', function(event) {
-			scaleFactor = previousScaleFactor * event.scale;
-			scaleFactor = Math.max(MIN_ZOOM, Math.min(scaleFactor, MAX_ZOOM));
-
-			event.id = id;
-			event.scale = scaleFactor;
-			event.origin = cssOrigin;
-
-			changeRotationScale(event);
-			//transform(event);
-
-			// publish 'rotation-scale' if connected
-			if (sess && sess._websocket_connected) {
-				sess.publish("rotate-scale", {
-					session: sess.sessionid(),
-					id: id,
-					rotation: event.rotation,
-					scale: event.scale
-				});
-			}
-		});
-
-		container.bind('transformend', function(event) {
-			previousScaleFactor = scaleFactor;
-			event.scale = scaleFactor;
-			event.origin = cssOrigin;
-			console.log(event);
-
-			// publish 'rotation-scale-end' if connected
-			if (sess && sess._websocket_connected) {
-				sess.publish("rotate-scale-end", {
-					session: sess.sessionid(),
-					id: id,
-					rotation: event.rotation,
-					scale: event.scale
-				});
-			}
-		});
-	};
+	};*/
 
 
 
@@ -926,10 +706,7 @@ $(document).ready(function(){
 			// transfering file
 			progress: function(e, data) {
 				var progress = parseInt(data.loaded / data.total * 100, 10);
-				data.context.$element.find('.bar').css(
-					'width',
-					progress + '%'
-				);
+				data.context.$element.find('.bar').css('width', progress + '%');
 			},
 	
 			// upload finished
@@ -944,14 +721,14 @@ $(document).ready(function(){
 	
 					// publish 'add element' if connected
 					if (sess && sess._websocket_connected) {
-						var position = $('#' + file.id).offset();
+						var el = $('#' + file.id);
 						sess.publish("add", {
 							session: sess.sessionid(),
 							id: file.id,
 							name: file.name,
 							type: file.type,
-							left: position.left,
-							top: position.top,
+							left: el.css('x'),
+							top: el.css('y'),
 							index: file.index,
 							rotation: 0,	// default rotation: 0
 							scale: 1			// default scale: 1
@@ -985,7 +762,7 @@ $(document).ready(function(){
 		$('#' + $(this).data('id')).removeClass('hover').css('background-color', '')
 	})
 	.on('click', 'dd', function(event) {
-		toggleColor($(this));
+		toggleElement($(this));
 	})
 	.on('click', 'button', function(event) {
 		removeFile($(this).parent());
@@ -1057,19 +834,19 @@ $(document).ready(function(){
 
 
 /*****  INSERT YOUTUBE VIDEO  *****/
-	youtubeInput.css('right', $('#sidebar-right').outerWidth() - 40);
+	youtubeInput.css('right', sidebarRight.outerWidth() - 40);
 	youtubeAddButton.click(function(){
 		// Animate the input field
 		if (youtubeInput.is(':visible')) {
 			youtubeInput.animate({
-				right: $('#sidebar-right').outerWidth() - 40,
+				right: sidebarRight.outerWidth() - 40,
 				opacity: '0'
 			}, 300, function() {
 				youtubeInput.css('display', 'none');
 			});
 		} else {
 			youtubeInput.css('display', 'block').animate({
-				right: $('#sidebar-right').outerWidth(),
+				right: sidebarRight.outerWidth(),
 				opacity: '1'
 			}, 300, function() {
 				youtubeInput.find('input').focus();
@@ -1092,7 +869,7 @@ $(document).ready(function(){
 				youtube_title(id);
 
 				youtubeInput.animate({
-					right: $('#sidebar-right').outerWidth() - 40,
+					right: sidebarRight.outerWidth() - 40,
 					opacity: '0'
 				}, 300, function() {
 					youtubeInput.css('display', 'none');

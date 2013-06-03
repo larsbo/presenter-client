@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <title>Presenter v2.0</title>
   <link rel="stylesheet" href="css/bootstrap.min.css">
@@ -123,7 +123,7 @@
       </button>
     </div>
     <p>
-      <span id="upload-button" class="btn btn-block btn-success">
+      <span id="upload-button" class="btn btn-block btn-large btn-success">
         <i class="icon-plus icon-white"></i>
         <span>Dateien hinzuf&uuml;gen</span>
         <input id="upload-input" type="file" multiple name="files[]">
@@ -132,7 +132,7 @@
     <dl id="file-container" class="files">
     </dl>
     <p>
-      <button id="remove-files" type="button" class="btn btn-block btn-danger" style="display:none">
+      <button id="remove-files" type="button" class="btn btn-block btn-large btn-danger" style="display:none">
         <i class="icon-trash"></i>
         Alles entfernen
       </button>
@@ -193,19 +193,21 @@
 <script src="js/vendor/jquery-ui-1.10.0.custom.min.js"></script>
 <script src="js/vendor/hammer.js"></script>
 <script src="js/vendor/jquery.hammer.js"></script>
+<script src="js/vendor/hammer.fakemultitouch.js"></script>
+<script src="js/vendor/hammer.showtouches.js"></script>
 
 <!-- websockets framework -->
 <script src="js/vendor/autobahn.min.js"></script>
 
-<!-- addons for special actions -->
-<script src="js/vendor/image-picker.js"></script>
-<script src="js/vendor/simplecolorpicker.js"></script>
-<script src="js/vendor/notify.js"></script>
-<script src="js/vendor/md5.js"></script>
+<!-- addons -->
 <script src="js/vendor/fileupload.js"></script>
-<script src="js/vendor/iframe-transport.js"></script>
 <script src="js/vendor/html5media.min.js"></script>
+<script src="js/vendor/iframe-transport.js"></script>
+<script src="js/vendor/image-picker.js"></script>
+<script src="js/vendor/md5.js"></script>
+<script src="js/vendor/notify.js"></script>
 <script src="js/vendor/pdfobject.min.js"></script>
+<script src="js/vendor/simplecolorpicker.js"></script>
 
 <!-- program logic -->
 <script src="js/main.js"></script>

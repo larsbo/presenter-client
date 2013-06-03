@@ -38,10 +38,11 @@ body {
 	font-size: 12px;
 	right: 0;
 	position: absolute;
-	min-width: 220px;
+	min-width: 300px;
 	text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 	top: 20%;
-	div, p {
+
+	& > div, p {
 		margin: 10px;
 	}
 }
@@ -244,8 +245,8 @@ a:focus, .btn:focus {
 	dd {
 		cursor: pointer;
 		line-height: 15px;
-		margin-bottom: 1px;
-		padding: 5px 3px;
+		margin-bottom: 3px;
+		padding: 10px;
 		&:hover {
 			background-color: rgba(255,255,255,0.2);
 		}
@@ -254,25 +255,29 @@ a:focus, .btn:focus {
 			&:hover {
 				background-color: rgba(255,255,255,0.4);
 			}
-			button {
+			.btn-group {
 				display: inline-block;
 			}
 		}
 		& > i {
 			float: left;
-			font-size: 24px;
-			padding: 0 5px;
+			font-size: 30px;
+			padding: 1px 5px;
 		}
-		button {
-			display: none;
-			float: right;
-			margin-right: 3px;
-			margin-top: 2px;
-		}
+
 		.title {
 			float: left;
 			line-height: 24px;
-			padding: 0 3px;
+			padding: 5px 3px;
+		}
+		.btn-group {
+			display: none;
+			float: right;
+			margin: 0;
+
+			button {
+				margin-top: 2px;
+			}
 		}
 	}
 }

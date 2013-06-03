@@ -30,10 +30,10 @@ body {
   font-size: 12px;
   right: 0;
   position: absolute;
-  min-width: 220px;
+  min-width: 300px;
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
   top: 20%; }
-  #sidebar-right div, #sidebar-right p {
+  #sidebar-right > div, #sidebar-right p {
     margin: 10px; }
 
 #client-container {
@@ -213,29 +213,30 @@ a:focus, .btn:focus {
   .files dd {
     cursor: pointer;
     line-height: 15px;
-    margin-bottom: 1px;
-    padding: 5px 3px; }
+    margin-bottom: 3px;
+    padding: 10px; }
     .files dd:hover {
       background-color: rgba(255, 255, 255, 0.2); }
     .files dd.checked {
       background-color: rgba(255, 255, 255, 0.6); }
       .files dd.checked:hover {
         background-color: rgba(255, 255, 255, 0.4); }
-      .files dd.checked button {
+      .files dd.checked .btn-group {
         display: inline-block; }
     .files dd > i {
       float: left;
-      font-size: 24px;
-      padding: 0 5px; }
-    .files dd button {
-      display: none;
-      float: right;
-      margin-right: 3px;
-      margin-top: 2px; }
+      font-size: 30px;
+      padding: 1px 5px; }
     .files dd .title {
       float: left;
       line-height: 24px;
-      padding: 0 3px; }
+      padding: 5px 3px; }
+    .files dd .btn-group {
+      display: none;
+      float: right;
+      margin: 0; }
+      .files dd .btn-group button {
+        margin-top: 2px; }
 
 /*****  ELEMENTS  *****/
 .element {
