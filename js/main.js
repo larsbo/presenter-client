@@ -114,63 +114,99 @@ $(document).ready(function(){
 			var el = target.prop('id');
 
 			// only use touch events related to current target
-			if (el === currentID) {
+			switch(ev.type) {
 
-				switch(ev.type) {
+			case 'touch':
+				elements[el].lastScale = elements[el].scale;
+				elements[el].lastRotation = elements[el].rotation;
+				break;
 
-				case 'touch':
-					elements[el].lastScale = elements[el].scale;
-					elements[el].lastRotation = elements[el].rotation;
-					break;
+			case 'dragstart':
+				currentTarget.css({
+					'z-index': getMaxZIndex() + 1
+				});
 
-				case 'drag-start':
-					currentTarget.css({
-						'z-index': getMaxZIndex() + 1
+				// publish 'drag start' if connected
+				if (connected()) {
+					sess.publish("drag-start", {
+						id: el,
+						index: getMaxZIndex() + 1
 					});
-					break;
+				}
+				break;
 
-				case 'drag':
-					elements[el].position.x = ev.gesture.deltaX + elements[el].lastPosition.x;
-					elements[el].position.y = ev.gesture.deltaY + elements[el].lastPosition.y;
-					break;
-
-				case 'transform':
-
-					// check for another touch event on this element
-					for (var i=0; i<touchLength; i++) {
-						if (i != t) {
-							var secondTarget = (touches[i].target.nodeName === 'DIV') ? $(touches[i].target) : $(touches[i].target).parents('.element');
-							if (secondTarget.prop('id') === el) {
-								elements[el].rotation = ev.gesture.rotation + elements[el].lastRotation;
-								elements[el].scale = Math.max(minimalScale, Math.min(elements[el].lastScale * ev.gesture.scale, 10));
-							}
-						}
-					}
-					break;
-
-				case 'dragend':
-					elements[el].lastPosition.x = elements[el].position.x;
-					elements[el].lastPosition.y = elements[el].position.y;
-					break;
-
+			case 'drag':
+				if (el === currentID) {
+					var scale = 1/elements[el].scale;
+					elements[el].position.x = ev.gesture.deltaX * scale + elements[el].lastPosition.x;
+					elements[el].position.y = ev.gesture.deltaY * scale + elements[el].lastPosition.y;
 				}
 
-				// set element properties
-				target.css({
-					rotate: elements[el].rotation,
-					scale: elements[el].scale,
-					x: elements[el].position.x,
-					y: elements[el].position.y
-				});
+				// publish position if connected
+				if (connected()) {
+					sess.publish("drag", {
+						session: sess.sessionid(),
+						id: el,
+						left: elements[el].position.x,
+						top: elements[el].position.y
+					});
+				}
+				break;
+
+			case 'transform':
+				// check for another touch event on this element
+				for (var i=0; i<touchLength; i++) {
+					if (i != t) {
+						var secondTarget = (touches[i].target.nodeName === 'DIV') ? $(touches[i].target) : $(touches[i].target).parents('.element');
+						if (elements[el] !== 'undefined' && secondTarget.prop('id') === el) {
+							elements[el].rotation = ev.gesture.rotation + elements[el].lastRotation;
+							elements[el].scale = Math.max(minimalScale, Math.min(elements[el].lastScale * ev.gesture.scale, 10));
+						}
+					}
+				}
+				// publish rotation & scale if connected
+				if (connected()) {
+					sess.publish("rotate-scale", {
+						session: sess.sessionid(),
+						id: el,
+						rotation: elements[el].rotation,
+						scale: elements[el].scale
+					});
+				}
+				break;
+
+			case 'dragend':
+				elements[el].lastPosition.x = elements[el].position.x;
+				elements[el].lastPosition.y = elements[el].position.y;
+
+				// publish position if connected
+				if (connected()) {
+					sess.publish("drag-end", {
+						session: sess.sessionid(),
+						id: el,
+						left: elements[el].position.x,
+						top: elements[el].position.y
+					});
+				}
+				break;
 			}
+
+			// set element properties
+			target.css({
+				rotate: elements[el].rotation,
+				scale: elements[el].scale,
+				x: elements[el].position.x,
+				y: elements[el].position.y
+			});
 		}
 	})
 
 	.on('hold', '.element', function(ev) {
 		var el = $(ev.currentTarget);
 		fileContainer.find('dd').each(function(i, element){
-			if ($(this).data('id') === el.prop('id')) {
-				toggleElement($(this));
+			var file = $(this);
+			if (file.data('id') === el.prop('id')) {
+				toggleElement(file);
 				return;
 			}
 		});
@@ -230,7 +266,11 @@ $(document).ready(function(){
 			});
 
 			// show message
-			notifyContainer.notify({ message: { text: 'Verbindung hergestellt!' } }).show();
+			notifyContainer.notify({
+				message: {
+					text: 'Verbindung zum Server wurde hergestellt!'
+				}
+			}).show();
 
 			// modify layout
 			connectForm.hide();
@@ -249,13 +289,23 @@ $(document).ready(function(){
 	};
 
 	// disconnect from server
-	function disconnect(message) {
+	function disconnect(result) {
+		var message;
 		if (sess) {
 			sess.close();
 		}
 
 		// show message
-		notifyContainer.notify({ message: { text: message } }).show();
+		if (result === 'Connection could not be established.') {
+			message = 'Es konnte keine Verbindung hergestellt werden.';
+		} else {
+			message = 'Die Verbindung zum Server wurde getrennt.';
+		}
+		notifyContainer.notify({
+			message: {
+				text: message
+			}
+		}).show();
 
 		// reset layout
 		connectForm.show().find('button').button('reset');
@@ -265,6 +315,14 @@ $(document).ready(function(){
 		$('body').removeClass('wait');
 	};
 
+	// check if client is connected to a server
+	function connected() {
+		if (sess && sess._websocket_connected) {
+			return true;
+		} else {
+			return false;
+		}
+	};
 
 
 /*****  EVENTS FROM SERVER  *****/
@@ -337,8 +395,7 @@ $(document).ready(function(){
 	function onDragStart(topic, event) {
 		if (event.session != sess.sessionid()) {
 			changeZIndex(event);
-
-			notifyContainer.notify({ message: { text: 'Bewege ' + event.id } }).show();
+			//notifyContainer.notify({ message: { text: 'Bewege ' + event.id } }).show();
 		}
 	}
 
@@ -491,7 +548,7 @@ $(document).ready(function(){
 		}
 
 		// add element to file list
-		$('<dd data-id="' + file.id + '" class="clearfix"><i class="' + image + '"></i><span class="title">' + file.name + '</span><div class="btn-group"><button type="button" class="btn btn-warning" title="reset"><i class="icon-refresh"></i></button><button type="button" class="btn btn-danger" title="entfernen"><i class="icon-remove"></i></button></dd>').appendTo(fileContainer);
+		$('<dd data-id="' + file.id + '" class="clearfix"><i class="' + image + '"></i><span class="title">' + file.name + '</span><div class="btn-group"><button type="button" class="reset btn btn-warning" title="reset"><i class="icon-refresh"></i></button><button type="button" class="delete btn btn-danger" title="entfernen"><i class="icon-remove"></i></button></dd>').appendTo(fileContainer);
 
 		// create element
 		var element = $('<div class="element ' + type + '" id="' + file.id + '" data-type="' + file.type + '">' + content + '<div class="title">' + file.name + '</div></div>');
@@ -540,6 +597,45 @@ $(document).ready(function(){
 		return file;
 	};
 
+	function resetFile(file) {
+		var id = file.data('id');
+		var el = elements[id];
+		el.position.x = 0;
+		el.position.y = 0;
+		el.lastPosition.y = 0;
+		el.lastPosition.x = 0;
+		el.rotation = 0;
+		el.lastRotation = 0;
+		el.scale = 1;
+		el.lasScale = 1;
+		var data = {
+			id: file.data('id'),
+			left: 0,
+			top: 0,
+			rotation: 0,
+			scale: 1
+		};
+
+		changePosition(data);
+		changeRotationScale(data);
+
+		// publish position, rotation & scale if connected
+		if (connected()) {
+			sess.publish("rotate-scale", {
+				session: sess.sessionid(),
+				id: id,
+				rotation: 0,
+				scale: 1
+			});
+			sess.publish("drag", {
+				session: sess.sessionid(),
+				id: id,
+				left: 0,
+				top: 0
+			});
+		}
+	};
+
 	function removeFile(file) {
 		var id = file.data('id');
 		var element = $('#' + id);
@@ -555,8 +651,8 @@ $(document).ready(function(){
 			element.remove();
 		});
 
-		// publish 'remove item' if connected
-		if (sess && sess._websocket_connected) {
+		// publish 'remove' if connected
+		if (connected()) {
 			sess.publish("remove", {
 				session: sess.sessionid(),
 				id: id
@@ -616,7 +712,7 @@ $(document).ready(function(){
 
 		if (el.hasClass('checked')) {
 			el.removeClass('checked');
-			$('#' + el.data('id')).removeClass('active').css('background-color', color);
+			$('#' + el.data('id')).removeClass('active').css('background-color', '');
 		} else {
 			el.addClass('checked');
 			$('#' + el.data('id')).addClass('active').css('border-color', color);
@@ -720,7 +816,7 @@ $(document).ready(function(){
 					appendElement(file);
 	
 					// publish 'add element' if connected
-					if (sess && sess._websocket_connected) {
+					if (connected()) {
 						var el = $('#' + file.id);
 						sess.publish("add", {
 							session: sess.sessionid(),
@@ -764,8 +860,11 @@ $(document).ready(function(){
 	.on('click', 'dd', function(event) {
 		toggleElement($(this));
 	})
-	.on('click', 'button', function(event) {
-		removeFile($(this).parent());
+	.on('click', '.delete', function(event) {
+		removeFile($(this).parents('dd'));
+	})
+	.on('click', '.reset', function(event) {
+		resetFile($(this).parents('dd'));
 	})
 	.bind('updateFileList', function() {
 		if (fileContainer.find('dd').length == 0) {
@@ -804,10 +903,11 @@ $(document).ready(function(){
 		toggleBar.find('i').toggleClass('icon-chevron-up icon-chevron-down');
 	});
 
-	clientName.keyup(function(e){
-		var charCode = e.charCode || e.keyCode;
-		if (charCode == 13) {
-			// disable Enter key
+	clientName.keypress(function(e){
+
+		var charCode = e.keyCode || e.which;
+		if (charCode === 13) {
+			// disable Enter key to prevent disconnect form submit
 			return false;
 		} else {
 			// publish new name
