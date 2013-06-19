@@ -41,9 +41,24 @@ body {
 	min-width: 300px;
 	text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 	top: 20%;
-
-	& > div, p {
+	p, .margin {
 		margin: 10px;
+	}
+	.options {
+		list-style: none;
+		margin: 0 0 0 10px;
+		li {
+			height: 25px;
+			padding-bottom: 10px;
+			div {
+				float: left;
+			}
+			label {
+				float: left;
+				display: block;
+				padding-left: 10px;
+			}
+		}
 	}
 }
 #client-container {
@@ -245,8 +260,8 @@ a:focus, .btn:focus {
 	dd {
 		cursor: pointer;
 		line-height: 15px;
-		margin-bottom: 3px;
-		padding: 10px;
+		margin-bottom: 1px;
+		padding: 5px 3px;
 		&:hover {
 			background-color: rgba(255,255,255,0.2);
 		}
@@ -292,7 +307,6 @@ a:focus, .btn:focus {
 	display: inline;
 	margin: 0 15px 15px;
 	min-width: 5%;
-	overflow: hidden;
 	padding: 10px 10px 25px;
 	position: absolute;
 	text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
@@ -303,12 +317,13 @@ a:focus, .btn:focus {
 	transform: translate3d(0,0,0);
 
 	.title {
+		bottom: -35px;
 		clear: both;
-		color: #333;
-		font-size: 20px;
 		content: attr(title);
-		position: relative;
-		top: 15px;
+		font-size: 14px;
+		left: 0;
+		padding: 3px 5px;
+		position: absolute;
 	}
 	&:hover, &.hover, &.active {
 		@include box-shadow(0 10px 20px rgba(0,0,0,.7));
@@ -385,6 +400,9 @@ a:focus, .btn:focus {
 
 	audio, img, video {
 		display: block;
+		max-height: 800px;
+		min-height: 10%;
+		min-width: 5%;
 	}
 }
 
@@ -565,30 +583,48 @@ body.wait {
 }
 
 
-
-
+#background-changer-open {
+	bottom: 30px;
+	&:hover {
+		bottom: 40px;
+	}
+}
+#background-changer-open,
+#background-changer-close {
+	color: #fff;
+	cursor: pointer;
+	opacity: 0.5;
+	padding: 10px;
+	position: relative;
+	transition: all 300ms ease-in-out;
+	&:hover {
+		opacity: 1;
+	}
+}
 #background-changer-container {
-	display: none;
+	bottom: -100px;
 	position: absolute;
-	right: 10px;
-	top: 20px;
-	width: 100px;
+	text-align: center;
+	transition: all 300ms ease-in-out;
+	width: 100%;
 }
 .image_picker_selector {
-	overflow: auto;
 	list-style-image: none;
 	list-style-position: outside;
 	list-style-type: none;
+	overflow: auto;
 	padding: 0;
-	margin: 0;
+	margin: 0 auto;
+	width: 50%;
 	li {
-		margin: 0 0 12px;
+		margin: 0;
 		float: left;
+		width: 12.5%;
 		.thumbnail {
 			border: 1px solid #777;
 			cursor: pointer;
+			margin: 5px;
 			padding: 1px;
-			width: 78px;
 			box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 			&:hover {
 				border-color: #bbb;

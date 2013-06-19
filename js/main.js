@@ -59,6 +59,7 @@ $(document).ready(function(){
 	var backgroundChanger = $('#background-changer');
 	var colorPicker = $('#colorpicker');
 	var trash = $('#trash');
+	var showLog = false;
 
 
 	// set element container's height = window height - topbar height
@@ -342,7 +343,7 @@ $(document).ready(function(){
 							// this client
 							current = ' current';
 						}
-						var entry = $('<div id="client-' + client + '" class="client' + current + '" data-session="' + data.session + '"><img class="circle" src="http://cl.busb.org/L79J/dj.png" /><div class="name">' + data.name + '</div></div>');
+						var entry = $('<div id="client-' + client + '" class="client' + current + '" data-session="' + data.session + '"><img class="circle" src="' + getGravatar(data.name) + '" /><div class="name">' + data.name + '</div></div>');
 						entry.hide().appendTo(clientContainer).fadeIn();
 
 						// set client color
@@ -395,7 +396,10 @@ $(document).ready(function(){
 	function onDragStart(topic, event) {
 		if (event.session != sess.sessionid()) {
 			changeZIndex(event);
-			//notifyContainer.notify({ message: { text: 'Bewege ' + event.id } }).show();
+
+			if (showLog) {
+				notifyContainer.notify({ message: { text: 'Bewege ' + event.id } }).show();
+			}
 		}
 	}
 
@@ -551,7 +555,7 @@ $(document).ready(function(){
 		$('<dd data-id="' + file.id + '" class="clearfix"><i class="' + image + '"></i><span class="title">' + file.name + '</span><div class="btn-group"><button type="button" class="reset btn btn-warning" title="reset"><i class="icon-refresh"></i></button><button type="button" class="delete btn btn-danger" title="entfernen"><i class="icon-remove"></i></button></dd>').appendTo(fileContainer);
 
 		// create element
-		var element = $('<div class="element ' + type + '" id="' + file.id + '" data-type="' + file.type + '">' + content + '<div class="title">' + file.name + '</div></div>');
+		var element = $('<div class="element ' + type + '" id="' + file.id + '" data-type="' + file.type + '">' + content + '<div class="title alert-default"' + (showTitle() ? '' : ' style="display:none;"') + '>' + file.name + '</div></div>');
 
 		// add element to surface
 		element
@@ -691,6 +695,7 @@ $(document).ready(function(){
 		clientContainer.find('.client').each(function(i, element) {
 			if ($(element).data('session') == session) {
 				$(element).find('.name').text(name);
+				$(element).find('img').prop('src', getGravatar(name));
 			}
 		});
 	};
@@ -794,7 +799,10 @@ $(document).ready(function(){
 					message: { html: "<small>Datei wird geladen...</small><div class=\"progress progress-striped active\"><div class=\"bar\"></div></div>" },
 					fadeOut: { enabled: false }
 				});
+
+			if (showLog) {
 				message.show();
+			}
 				data.context = message;
 				data.submit();
 			},
@@ -879,6 +887,25 @@ $(document).ready(function(){
 		});
 	});
 
+	// options
+	$('#sidebar-right').find('input').iCheck({
+		checkboxClass: 'icheckbox_square-orange',
+		radioClass: 'iradio_square-orange'
+	});
+
+	$('#toggleTitle').on('ifChanged', function(event){
+		var element = elementContainer.find('.element');
+		var title = element.find('.title');
+		if ($(event.target).is(':checked')) {
+			title.slideDown();
+		} else {
+			title.slideUp();
+		}
+	});
+
+	$('#toggleLog').on('ifChanged', function(event){
+		showLog = $(event.target).is(':checked');
+	});
 
 
 /*****  LAYOUT INTERACTION  *****/
@@ -982,7 +1009,7 @@ $(document).ready(function(){
 	function youtube_id(url) {
 		var p = /^(?:https?:\/\/)?(?:www\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))((\w|-){11})(?:\S+)?$/;
 		return (url.match(p)) ? RegExp.$1 : false;
-	}
+	};
 
 	function youtube_title(id) {
 		$.ajax({
@@ -996,10 +1023,30 @@ $(document).ready(function(){
 				}
 			}
 		});
-	}
+	};
 
+	function getGravatar(name) {
+		return 'http://www.gravatar.com/avatar.php?gravatar_id=' + md5(name) + '&r=PG&s=100&default=identicon';
+	};
+
+	function showTitle() {
+		return $('#toggleTitle').is(':checked');
+	};
 
 	/*****  background changer  *****/
+	var backgroundChangerOpen = $('#background-changer-open');
+	var backgroundChangerClose = $('#background-changer-close');
+	var backgroundChangerContainer = $('#background-changer-container');
+	backgroundChangerOpen.click(function(){
+		backgroundChangerOpen.hide();
+		backgroundChangerClose.show();
+		backgroundChangerContainer.css('bottom', 5);
+	});
+	backgroundChangerClose.click(function(){
+		backgroundChangerOpen.show();
+		backgroundChangerClose.hide();
+		backgroundChangerContainer.css('bottom', -100);
+	});
 	backgroundChanger.imagepicker();
 	backgroundChanger.change(function(){
 		var bg = $(this).val();

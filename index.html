@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="css/pictonic.css">
   <link rel="stylesheet" href="css/font-awesome.min.css">
   <link rel="stylesheet" href="css/jquery-ui-1.10.1.custom.css">
+  <link rel="stylesheet" href="css/icheck.css">
   <link rel="stylesheet" href="css/stylesheet.css">
   <script src="js/vendor/modernizr.min.js"></script>
   <script src="http://use.edgefonts.net/sansita-one.js"></script>
@@ -95,6 +96,9 @@
   </div>
 
   <div id="background-changer-container">
+    <div id="background-changer-open">
+      <i class="icon-arrow-up icon-2x"></i>
+    </div>
     <select id="background-changer">
       <option data-img-src="img/bg/background-1.jpg" value="1">Hintergrund 1</option>
       <option data-img-src="img/bg/background-2.jpg" value="2">Hintergrund 2</option>
@@ -104,13 +108,15 @@
       <option data-img-src="img/bg/background-6.jpg" value="6">Hintergrund 6</option>
       <option data-img-src="img/bg/background-7.jpg" value="7">Hintergrund 7</option>
       <option data-img-src="img/bg/background-8.jpg" value="8">Hintergrund 8</option>
-      <option data-img-src="img/bg/background-9.jpg" value="9">Hintergrund 9</option>
     </select>
+    <div id="background-changer-close" style="display:none;">
+      <i class="icon-arrow-down icon-2x"></i>
+    </div>
   </div>
 
   <form enctype="multipart/form-data" method="post" action="" id="fileupload">
   <div id="sidebar-right">
-    <div class="relative">
+    <div class="relative margin">
       <div class="input-append" id="youtube-input">
         <input type="text" class="input-xlarge" name="youtube-video-link" placeholder="Link zum Video">
         <button type="button" class="btn" id="youtube-load-button">
@@ -137,6 +143,16 @@
         Alles entfernen
       </button>
     </p>
+    <ul class="options">
+      <li>
+        <input type="checkbox" id="toggleTitle" name="toggleTitle">
+        <label for="toggleTitle">Titel anzeigen</label>
+      </li>
+      <li>
+        <input type="checkbox" id="toggleLog" name="toggleLog">
+        <label for="toggleLog">Log anzeigen</label>
+      </li>
+    </ul>
   </div>
   </form>
 
@@ -201,6 +217,7 @@
 <!-- addons -->
 <script src="js/vendor/fileupload.js"></script>
 <script src="js/vendor/html5media.min.js"></script>
+<script src="js/vendor/icheck.min.js"></script>
 <script src="js/vendor/iframe-transport.js"></script>
 <script src="js/vendor/image-picker.js"></script>
 <script src="js/vendor/md5.js"></script>
