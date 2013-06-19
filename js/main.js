@@ -1,8 +1,11 @@
 var sess, msg, ip, uploadDir;
-var elements = {};		// object to store information about every element
-var local = 'localhost';
-var uploadPath = '/PresenterServer/upload/';
-var minimalScale = 0.5;
+
+var uploadPath = '/PresenterServer/upload/';	// path to local storage script (php required)
+
+var SCALE_MIN = 0.5;
+var SCALE_MAX = 3.0;
+var SCALE_SMOOOTHNESS = 0.9;
+var ROTATION_SMOOOTHNESS = 0.5;
 
 function round(x) {
 	var k = (Math.round(x * 100) / 100).toString();
@@ -11,14 +14,14 @@ function round(x) {
 }
 
 
-if(!Hammer.HAS_TOUCHEVENTS && !Hammer.HAS_POINTEREVENTS) {
+/*if(!Hammer.HAS_TOUCHEVENTS && !Hammer.HAS_POINTEREVENTS) {
 	Hammer.plugins.showTouches();
 }
-
 if(!Hammer.HAS_TOUCHEVENTS && !Hammer.HAS_POINTEREVENTS) {
 	Hammer.plugins.fakeMultitouch();
-}
+}*/
 
+// ALWAYS LOAD PLUGINS FOR DEBUGGING
 Hammer.plugins.showTouches();
 Hammer.plugins.fakeMultitouch();
 
@@ -69,149 +72,119 @@ $(document).ready(function(){
 
 
 	// initialize upload script
-	initializeFileUpload(local, uploadPath);
+	initializeFileUpload('localhost', uploadPath);
+
+
+	// initialize touch gestures
+	elementContainer.find('.element').each(function(i, element) {
+		Touch(element);
+	});
+
+
 
 
 /*****  TOUCH GESTURES  *****/
-	elementContainer.hammer({
 
-		// dragging options:
-		drag_block_horizontal: true,
-		drag_block_vertical: true,
-		drag_max_touches: 0,				// number of allowed parallel touch events (0 = unlimited)
+	function Touch(element){
+		var el = $(element);
+		var box = el.parent();
 
-		// transformation (scale & rotation) options:
-		transform_always_block: true,
-		transform_min_scale: 1,
-		transform_min_rotation: 1
-	})
+		var Hammer = box.hammer({
+			prevent_default: true,				// stop default touch behaviour
 
+			// dragging options:
+			drag_block_horizontal: true,
+			drag_block_vertical: true,
+			drag_max_touches: 0,					// number of allowed parallel touch events (0 = unlimited)
+			drag_min_distance: 0,
 
-	/***  START DRAGGING  ***/
-	.on('touch dragstart drag dragend transform', '.element', function(ev) {
-		ev.stopPropagation();
-
-		// catch not well defined gestures
-		if (ev.gesture === undefined) {
-			ev.preventDefault();
-			return false;
-		}
-
-		// stop default click/touch behaviour
-		ev.gesture.preventDefault();
-
-		// get touches
-		var touches = ev.gesture.touches;
-		var touchLength = touches.length;
-
-		// get target
-		var currentTarget = $(ev.currentTarget);
-		var currentID = currentTarget.prop('id');
-
-		// iterate over all touches
-		for (var t=0; t<touchLength; t++) {
-			var touch = touches[t];
-			var target = (touch.target.nodeName === 'DIV') ? $(touch.target) : $(touch.target).parents('.element');
-			var el = target.prop('id');
-
-			// only use touch events related to current target
-			switch(ev.type) {
-
-			case 'touch':
-				elements[el].lastScale = elements[el].scale;
-				elements[el].lastRotation = elements[el].rotation;
-				break;
-
-			case 'dragstart':
-				currentTarget.css({
-					'z-index': getMaxZIndex() + 1
-				});
-
-				// publish 'drag start' if connected
-				if (connected()) {
-					sess.publish("drag-start", {
-						id: el,
-						index: getMaxZIndex() + 1
-					});
-				}
-				break;
-
-			case 'drag':
-				if (el === currentID) {
-					var scale = 1/elements[el].scale;
-					elements[el].position.x = ev.gesture.deltaX * scale + elements[el].lastPosition.x;
-					elements[el].position.y = ev.gesture.deltaY * scale + elements[el].lastPosition.y;
-				}
-
-				// publish position if connected
-				if (connected()) {
-					sess.publish("drag", {
-						session: sess.sessionid(),
-						id: el,
-						left: elements[el].position.x,
-						top: elements[el].position.y
-					});
-				}
-				break;
-
-			case 'transform':
-				// check for another touch event on this element
-				for (var i=0; i<touchLength; i++) {
-					if (i != t) {
-						var secondTarget = (touches[i].target.nodeName === 'DIV') ? $(touches[i].target) : $(touches[i].target).parents('.element');
-						if (elements[el] !== 'undefined' && secondTarget.prop('id') === el) {
-							elements[el].rotation = ev.gesture.rotation + elements[el].lastRotation;
-							elements[el].scale = Math.max(minimalScale, Math.min(elements[el].lastScale * ev.gesture.scale, 10));
-						}
-					}
-				}
-				// publish rotation & scale if connected
-				if (connected()) {
-					sess.publish("rotate-scale", {
-						session: sess.sessionid(),
-						id: el,
-						rotation: elements[el].rotation,
-						scale: elements[el].scale
-					});
-				}
-				break;
-
-			case 'dragend':
-				elements[el].lastPosition.x = elements[el].position.x;
-				elements[el].lastPosition.y = elements[el].position.y;
-
-				// publish position if connected
-				if (connected()) {
-					sess.publish("drag-end", {
-						session: sess.sessionid(),
-						id: el,
-						left: elements[el].position.x,
-						top: elements[el].position.y
-					});
-				}
-				break;
-			}
-
-			// set element properties
-			target.css({
-				rotate: elements[el].rotation,
-				scale: elements[el].scale,
-				x: elements[el].position.x,
-				y: elements[el].position.y
-			});
-		}
-	})
-
-	.on('hold', '.element', function(ev) {
-		var el = $(ev.currentTarget);
-		fileContainer.find('dd').each(function(i, element){
-			var file = $(this);
-			if (file.data('id') === el.prop('id')) {
-				toggleElement(file);
-				return;
-			}
+			// transformation options:
+			transform_always_block: true,
+			transform_min_rotation: 0,
+			transform_min_scale: 0
 		});
-	});
+
+		// storage object for element data
+		var o = {
+			initialX: 0,	// initial element position
+			initialY: 0,
+			positionX: 0,	// current element position
+			positionY: 0,
+			offsetX: 0,		// element borders touch offset
+			offsetY: 0,
+			scale: 1,
+			lastScale: 1,
+			rotate: 0,
+			lastRotate: 0,
+			touch1X: 0,
+			touch1Y: 0,
+			touch2X: 0,
+			touch2Y: 0,
+			touchCenterX: 0,
+			touchCenterY: 0,
+			touchDistance: 0,
+			transform: true		// flag if transformation is allowed
+		};
+
+		Hammer
+		.on("transformstart", function(event){
+			// get the original positions of the 2 touches
+			var touches = event.gesture.touches;
+			o.touch1X = touches[0].pageX;
+			o.touch1Y = touches[0].pageY;
+			o.touch2X = touches[1].pageX;
+			o.touch2Y = touches[1].pageY;
+
+			// compute center of touches
+			o.touchCenterX = (o.touch1X + o.touch2X) / 2;
+			o.touchCenterY = (o.touch1Y + o.touch2Y) / 2;
+
+			// compute euclidean distance of touches
+			o.touchDistance = Math.sqrt(Math.pow(o.touch1X - o.touch2X, 2) + Math.pow(o.touch1Y - o.touch2Y, 2));
+			if (o.touchDistance > 200) {
+				o.transform = false;
+			}
+		})
+		.on("transform", function(event) {
+			if (o.transform) {
+				// compute transformation
+				o.scale = Math.max(SCALE_MIN, Math.min(o.lastScale * event.gesture.scale * SCALE_SMOOOTHNESS, SCALE_MAX));
+				o.rotate = o.lastRotate + event.gesture.rotation * ROTATION_SMOOOTHNESS;
+
+				// transform element
+				el.css({
+					scale: o.scale,
+					rotate: o.rotate
+				});
+			}
+		})
+		.on("transformend", function() {
+			// store transformation
+			o.lastScale = o.scale;
+			o.lastRotate = o.rotate % 360;
+			o.transform = true;
+		})
+		.on("dragstart", function(event){
+			// get element position
+			o.initialX = box.position().left;
+			o.initialY = box.position().top;
+
+			// compute touch offset from the object borders
+			o.offsetX = event.gesture.center.pageX - o.initialX;
+			o.offsetY = event.gesture.center.pageY - o.initialY;
+		})
+		.on("drag", function(event){
+			//new coordinates
+			o.positionX = event.gesture.center.pageX - o.offsetX;
+			o.positionY = event.gesture.center.pageY - o.offsetY;
+
+			// move element container
+			box.css({
+				left: o.positionX,
+				top: o.positionY
+			});
+		});
+	};
 
 
 
@@ -493,7 +466,7 @@ $(document).ready(function(){
 		case 'image/tiff':
 			type = 'image';
 			image = 'icon-picture';
-			content = '<img src="' + uploadDir + 'files/' + file.name + '" width="100%" />';
+			content = '<img src="' + uploadDir + 'files/' + file.name + '" />';
 			break;
 
 		case 'video/mp4':
@@ -555,11 +528,15 @@ $(document).ready(function(){
 		$('<dd data-id="' + file.id + '" class="clearfix"><i class="' + image + '"></i><span class="title">' + file.name + '</span><div class="btn-group"><button type="button" class="reset btn btn-warning" title="reset"><i class="icon-refresh"></i></button><button type="button" class="delete btn btn-danger" title="entfernen"><i class="icon-remove"></i></button></dd>').appendTo(fileContainer);
 
 		// create element
-		var element = $('<div class="element ' + type + '" id="' + file.id + '" data-type="' + file.type + '">' + content + '<div class="title alert-default"' + (showTitle() ? '' : ' style="display:none;"') + '>' + file.name + '</div></div>');
+		var box = $('<div class="element-box">'
+								+ '<div class="element ' + type + '" id="' + file.id + '" data-type="' + file.type + '">'
+									+ content 
+									+ '<div class="title alert-default"' + (showTitle() ? '' : ' style="display:none;"') + '>' + file.name + '</div>'
+								+ '</div>'
+							+ '</div>');
 
 		// add element to surface
-		element
-		.appendTo(elementContainer)
+		box.appendTo(elementContainer)
 		.css({
 			rotate: file.rotation,
 			scale: file.scale,
@@ -568,25 +545,13 @@ $(document).ready(function(){
 			'z-index': file.index
 		});
 
-		// insert element to collection for touch events
-		elements[file.id] = {
-			position: {
-				x: file.left,
-				y: file.top
-			},
-			lastPosition: {
-				x: 0,
-				y: 0
-			},
-			rotation: file.rotation,
-			lastRotation: 0,
-			scale: file.scale,
-			lastScale: 1
-		};
+		var element = box.find('.element');
 
+		// enable touch gestures
+		Touch(element);
 
 		// add content of text files to element container
-		if (type == 'text') {
+		if (type === 'text') {
 			$.get(uploadDir + 'files/' + file.name, function(data) {
 				if (data.length > 1000) {
 					data = data.substring(0, 1000) + '...';
@@ -734,53 +699,6 @@ $(document).ready(function(){
 		});
 		return maxIndex;
 	};
-
-/*****  ELEMENT DRAGGING  *****/
-/*
-	function enableDragging(element) {
-		element.draggable({
-			start: function() {
-				// publish 'drag start' if connected
-				if (sess && sess._websocket_connected) {
-					sess.publish("drag-start", {
-						id: element.prop('id'),
-						index: getMaxZIndex() + 1
-					});
-				}
-			},
-			drag: function() {
-				// publish position if connected
-				if (sess && sess._websocket_connected) {
-					var position = element.offset();
-					sess.publish("drag", {
-						session: sess.sessionid(),
-						id: element.prop('id'),
-						left: position.left,
-						top: position.top
-					});
-				}
-			},
-			stop: function() {
-				// publish position if connected
-				if (sess && sess._websocket_connected) {
-					var position = element.offset();
-					sess.publish("drag-end", {
-						session: sess.sessionid(),
-						id: element.prop('id'),
-						left: position.left,
-						top: position.top
-					});
-				}
-			},
-			// don't drag elements out of the surface
-			containment: "parent",
-			// setting for z-index of elements
-			stack: "#element-container .element",
-			// don't resize the surface
-			scroll: false
-		});
-	};*/
-
 
 
 /*****  DRAG & DROP FILE UPLOAD  *****/

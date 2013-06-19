@@ -79,9 +79,6 @@ body {
 	position: absolute;
 	top: 0;
 	width: 100%;
-	img {
-		position: relative;
-	}
 }
 #trash {
 	background-color: rgba(0, 0, 0, 0.5);
@@ -299,18 +296,19 @@ a:focus, .btn:focus {
 
 
 /*****  ELEMENTS  *****/
+.element-box {
+	position: absolute;
+}
+
 .element {
 	background: white;
-	@include box-shadow(0 4px 6px rgba(0,0,0,.3));
 	cursor: pointer;
 	float: left;
 	display: inline;
 	margin: 0 15px 15px;
 	min-width: 5%;
 	padding: 10px 10px 25px;
-	position: absolute;
 	text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
-	//@include transition(transform .15s linear);
 
 	-webkit-transform: translate3d(0,0,0);
 	-moz-transform: translate3d(0,0,0);
@@ -336,9 +334,6 @@ a:focus, .btn:focus {
 	/***  IMAGE  ***/
 	&.image {
 		cursor: pointer;
-		&:hover, &.hover, &.active {
-			//@include transform(scale(1.05));
-		}
 	}
 
 	/***  TEXT  ***/
