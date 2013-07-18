@@ -87,6 +87,7 @@ $(document).ready(function(){
 
 	function Touch(element){
 		var el = $(element);
+		var id = element.prop('id');
 		var box = el.parent();
 
 		var Hammer = box.hammer({
@@ -148,14 +149,24 @@ $(document).ready(function(){
 		.on("transform", function(event) {
 			if (o.transform) {
 				// compute transformation
-				o.scale = Math.max(SCALE_MIN, Math.min(o.lastScale * event.gesture.scale * SCALE_SMOOOTHNESS, SCALE_MAX));
 				o.rotate = o.lastRotate + event.gesture.rotation * ROTATION_SMOOOTHNESS;
+				o.scale = Math.max(SCALE_MIN, Math.min(o.lastScale * event.gesture.scale * SCALE_SMOOOTHNESS, SCALE_MAX));
 
 				// transform element
 				el.css({
-					scale: o.scale,
-					rotate: o.rotate
+					rotate: o.rotate,
+					scale: o.scale
 				});
+
+				// publish rotation & scale if connected
+				if (connected()) {
+					sess.publish("rotate-scale", {
+						session: sess.sessionid(),
+						id: id,
+						rotation: o.rotate,
+						scale: o.scale
+					});
+				}
 			}
 		})
 		.on("transformend", function() {
@@ -183,6 +194,16 @@ $(document).ready(function(){
 				left: o.positionX,
 				top: o.positionY
 			});
+
+			// publish position if connected
+			if (connected()) {
+				sess.publish("drag", {
+					session: sess.sessionid(),
+					id: id,
+					left: o.positionX,
+					top: o.positionY
+				});
+			}
 		});
 	};
 
@@ -567,16 +588,24 @@ $(document).ready(function(){
 	};
 
 	function resetFile(file) {
+		var el;
 		var id = file.data('id');
-		var el = elements[id];
-		el.position.x = 0;
+		var elements = getElements();
+
+		$.each(elements, function() {
+			if (this.id === id) {
+				el = this;
+			}
+		});
+
+		/*el.position.x = 0;
 		el.position.y = 0;
 		el.lastPosition.y = 0;
 		el.lastPosition.x = 0;
 		el.rotation = 0;
 		el.lastRotation = 0;
 		el.scale = 1;
-		el.lasScale = 1;
+		el.lasScale = 1;*/
 		var data = {
 			id: file.data('id'),
 			left: 0,
