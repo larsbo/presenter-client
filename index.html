@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <title>Presenter v2.0</title>
-  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/bootstrap-3.0.0.min.css">
+  <link rel="stylesheet" href="css/bootstrap-theme-3.0.0.min.css">
   <link rel="stylesheet" href="css/pictonic.css">
   <link rel="stylesheet" href="css/font-awesome.min.css">
   <link rel="stylesheet" href="css/jquery-ui-1.10.1.custom.css">
@@ -17,7 +18,7 @@
 <body>
 
 <div id="wrap">
-  <div id="element-container">
+  <div id="element-container" class="no-select">
 
 <!--
     <div class="element video" title="Video-Titel" id="element-0">
@@ -36,70 +37,89 @@
 
   </div>
 
-  <div id="bar" class="navbar navbar-fixed-top">
-    <div class="navbar-inner">
-      <a class="brand" href="#">Presenter</a>
-      <div class="divider-vertical pull-left"></div>
-      <form id="connect-form" class="navbar-form pull-left">
-        <span class="navbar-text pull-left">Server: </span>
-        <div class="input-append">
-          <input id="server" type="text" class="input-small" name="server" value="localhost">
-          <span class="add-on">:8080</span>
-          <button type="submit" class="btn btn-small" data-loading-text="Verbinde..." autocomplete="off">Verbinden</button>
-        </div>
-      </form>
-      <form id="disconnect-form" class="navbar-form pull-left" style="display:none;">
-        <span class="navbar-text pull-left">
-          <span class="status connected">
-            Server:
+  <div id="top-bar" class="navbar navbar-inverse navbar-fixed-top">
+    <div class="row">
+      <div class="col-md-2">
+        <a class="navbar-brand" href="#">Presenter</a>
+      </div>
+
+      <div class="col-md-5">
+        <form id="connect-form" class="navbar-form">
+          <span class="navbar-text">Server:</span>
+          <div class="form-group">
+            <div class="input-group">
+              <input id="server" type="text" class="form-control" name="server" value="localhost">
+              <span class="input-group-addon">:8080</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <button type="submit" class="btn navbar-btn btn-success" data-loading-text="Verbinde..." autocomplete="off">
+              <i class="icon-on"></i>
+              Verbinden
+            </button>
+          </div>
+        </form>
+
+        <form id="disconnect-form" class="navbar-form" style="display:none;">
+          <span class="navbar-text">
+            <span class="status connected">Server:</span>
+            <span class="server-ip label label-success"></span>
           </span>
-        <span class="server-ip"></span>
-        </span>
-        <div class="divider-vertical pull-left"></div>
-        <span class="navbar-text pull-left">
-          Name:
-        <input id="client-name" type="text" class="client-name" maxlength="16" />
-        </span>
-        <span class="navbar-text pull-left">
-          Farbe:
-          <select name="colorpicker" id="colorpicker">
-            <option value="#515151">Gray</option>
-            <option value="#7bd148">Green</option>
-            <option value="#5484ed">Bold blue</option>
-            <option value="#a4bdfc">Blue</option>
-            <option value="#46d6db">Turquoise</option>
-            <option value="#7ae7bf">Light green</option>
-            <option value="#51b749">Bold green</option>
-            <option value="#fbd75b">Yellow</option>
-            <option value="#ffb878">Orange</option>
-            <option value="#ff887c">Red</option>
-            <option value="#dc2127">Bold red</option>
-            <option value="#dbadff">Purple</option>
-          </select>
-        </span>
-        <div class="divider-vertical pull-left"></div>
-        <button type="submit" class="btn btn-small pull-right btn-danger">
-          <i class="icon-off"></i>
-          Verbindung trennen
-        </button>
-      </form>
+          <label>Name:</label>
+          <div class="form-group">
+            <input id="client-name" type="text" class="client-name form-control" maxlength="16">
+          </div>
+          <label class="padding-left">Farbe:</label>
+          <div class="form-group">
+            <select name="colorpicker" id="colorpicker">
+              <option value="#515151">Gray</option>
+              <option value="#7bd148">Green</option>
+              <option value="#5484ed">Bold blue</option>
+              <option value="#a4bdfc">Blue</option>
+              <option value="#46d6db">Turquoise</option>
+              <option value="#7ae7bf">Light green</option>
+              <option value="#51b749">Bold green</option>
+              <option value="#fbd75b">Yellow</option>
+              <option value="#ffb878">Orange</option>
+              <option value="#ff887c">Red</option>
+              <option value="#dc2127">Bold red</option>
+              <option value="#dbadff">Purple</option>
+            </select>
+          </div>
+          <div class="form-group padding-left">
+            <button type="submit" class="btn navbar-btn btn-danger">
+              <i class="icon-off"></i>
+              Verbindung trennen
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="navbar-right">
+      </div>
     </div>
   </div>
 
-  <div id="notifications" class="notifications top-right"></div>
 
+  <!-- Container fuer Log Nachrichten -->
+  <div id="notifications" class="notifications bottom-right"></div>
+
+
+  <!-- Buttons zum Ein-/Ausblenden der Top-Leiste und des Info-Fensters -->
   <div id="button-container">
-    <button id="toggle-bar" type="button" class="btn btn-small">
+    <button id="toggle-bar" type="button" class="btn">
       <i class="icon-chevron-up"></i>
     </button>
-    <button id="toggle-about" type="button" class="btn btn-small" data-toggle="modal" href="#about">
+    <button id="toggle-about" type="button" class="btn" data-toggle="modal" href="#about">
       <i class="icon-info-sign"></i>
     </button>
   </div>
 
+
+  <!-- Button zum Ein-/Ausblenden der Hintergrundauswahl -->
   <div id="background-changer-container">
     <div id="background-changer-open">
-      <i class="icon-arrow-up icon-2x"></i>
+      <i class="icon-arrow-up icon-3x"></i>
     </div>
     <select id="background-changer">
       <option data-img-src="img/bg/background-1.jpg" value="1">Hintergrund 1</option>
@@ -112,99 +132,112 @@
       <option data-img-src="img/bg/background-8.jpg" value="8">Hintergrund 8</option>
     </select>
     <div id="background-changer-close" style="display:none;">
-      <i class="icon-arrow-down icon-2x"></i>
+      <i class="icon-arrow-down icon-3x"></i>
     </div>
   </div>
 
+
+  <!-- Seitenleiste mit Buttons zum Verwalten der Elemente -->
   <form enctype="multipart/form-data" method="post" action="" id="fileupload">
   <div id="sidebar-right">
     <div class="relative margin">
-      <div class="input-append" id="youtube-input">
-        <input type="text" class="input-xlarge" name="youtube-video-link" placeholder="Link zum Video">
-        <button type="button" class="btn" id="youtube-load-button">
-          <i class="icon-share-alt"></i>
-          Hinzufügen
-        </button>
+      <div id="youtube-input">
+        <div class="input-group">
+          <input type="text" class="form-control" name="youtube-video-link" placeholder="Link zum Video">
+          <span class="input-group-btn">
+            <button type="button" class="btn" id="youtube-load-button">
+              <i class="icon-plus"></i>
+            </button>
+          </span>
+        </div>
       </div>
       <button type="button" class="btn btn-icon" id="youtube-add-button">
         <i class="iconp-youtube"></i>
       </button>
     </div>
     <p>
-      <span id="upload-button" class="btn btn-block btn-large btn-success">
+      <span id="upload-button" class="btn btn-block btn-lg btn-success">
         <i class="icon-plus icon-white"></i>
-        <span>Dateien hinzuf&uuml;gen</span>
+        <span>Element(e) hinzuf&uuml;gen</span>
         <input id="upload-input" type="file" multiple name="files[]">
       </span>
     </p>
     <dl id="file-container" class="files">
     </dl>
     <p>
-      <button id="remove-files" type="button" class="btn btn-block btn-large btn-danger" style="display:none">
-        <i class="icon-trash"></i>
-        Alles entfernen
+      <button id="remove-files" type="button" class="btn btn-block btn-lg btn-danger" style="display:none">
+        <i class="icon-remove"></i>
+        Alle Elemente entfernen
       </button>
     </p>
-    <ul class="options">
+    <ul class="options no-select">
       <li>
-        <input type="checkbox" id="toggleTitle" name="toggleTitle">
-        <label for="toggleTitle">Titel anzeigen</label>
+        <input type="checkbox" id="toggle-title" name="toggleTitle">
+        <label for="toggle-title">Titel anzeigen</label>
       </li>
       <li>
-        <input type="checkbox" id="toggleLog" name="toggleLog">
-        <label for="toggleLog">Log anzeigen</label>
+        <input type="checkbox" id="toggle-log" name="toggleLog">
+        <label for="toggle-log">Log anzeigen</label>
       </li>
     </ul>
   </div>
   </form>
 
+
   <div id="client-container"></div>
 
-  <div id="trash" rel="tooltip" title="Element hier ablegen, um es zu l&ouml;schen">
-    <i class="icon-trash"></i>
-  </div>
 
-  <div id="about" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-header">
-      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-      <h3>Presenter v2.0</h3>
-    </div>
-    <div class="modal-body">
-      <p>Multitouch App for collaborative working with media files powered by</p>
-      <ul class="icons">
-        <li>
-          <i class="icon-cogs"></i>
-          <a target="_blank" href="http://jquery.com">jquery</a>
-        </li>
-        <li>
-          <i class="icon-cogs"></i>
-          <a target="_blank" href="http://twitter.github.com/bootstrap">bootstrap</a></li>
-        <li>
-          <i class="icon-cogs"></i>
-          <a target="_blank" href="http://nodejs.org">node.js</a>
-        </li>
-        <li>
-          <i class="icon-cogs"></i>
-          <a target="_blank" href="http://socketo.me">Ratchet</a>
-        </li>
-        <li>
-          <i class="icon-cogs"></i>
-          <a target="_blank" href="http://autobahn.ws">Autobahn.ws</a>
-        </li>
-      </ul>
-    </div>
-    <div class="modal-footer">
-      <small class="pull-left a-left">
-        &copy; <a href="mailto:borchert.lars@gmail.com">2013 Lars Borchert</a>
-      </small>
-      <button class="btn" data-dismiss="modal" aria-hidden="true">Schlie&szlig;en</button>
+  <!-- Modal-Fenster mit Details zu den verwendeten Frameworks -->
+  <div id="about" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+          <h3>Presenter v2.0</h3>
+        </div>
+        <div class="modal-body">
+          <p>Multitouch App for collaborative working with media files powered by</p>
+          <ul class="icons columns-3">
+            <li>
+              <i class="icon-cogs"></i>
+              <a target="_blank" href="http://jquery.com">jquery</a>
+            </li>
+            <li>
+              <i class="icon-cogs"></i>
+              <a target="_blank" href="http://getbootstrap.com/">bootstrap</a></li>
+            <li>
+              <i class="icon-cogs"></i>
+              <a target="_blank" href="http://nodejs.org">node.js</a>
+            </li>
+            <li>
+              <i class="icon-cogs"></i>
+              <a target="_blank" href="http://socketo.me">Ratchet</a>
+            </li>
+            <li>
+              <i class="icon-cogs"></i>
+              <a target="_blank" href="http://autobahn.ws">Autobahn.ws</a>
+            </li>
+            <li>
+              <i class="icon-cogs"></i>
+              <a target="_blank" href="http://eightmedia.github.io/hammer.js/">hammer.js</a>
+            </li>
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <small class="pull-left a-left">
+            &copy; <a href="mailto:borchert.lars@gmail.com">2013 Lars Borchert</a>
+          </small>
+          <button class="btn" data-dismiss="modal" aria-hidden="true">Schlie&szlig;en</button>
+        </div>
+      </div>
     </div>
   </div>
 
 </div>
+
 <!-- general framworks -->
 <script src="js/vendor/jquery-1.10.1.min.js"></script>
-<script src="js/vendor/bootstrap.min.js"></script>
+<script src="js/vendor/bootstrap-3.0.0.min.js"></script>
 <script src="js/vendor/jquery.transit.min.js"></script>
 
 <!-- touch & gestures frameworks -->

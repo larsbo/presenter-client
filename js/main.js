@@ -1,3 +1,14 @@
+// disable drag scrolling in mobile browsers
+document.body.addEventListener('touchmove', function(event) {
+	event.preventDefault();
+}, false);
+
+// disable default firefox image dragging to open it
+document.body.addEventListener('dragstart', function(event) {
+	event.preventDefault();
+}, false);
+
+
 var sess, msg, ip, uploadDir;
 
 var uploadPath = '/PresenterServer/upload/';	// path to local storage script (php required)
@@ -25,33 +36,26 @@ if(!Hammer.HAS_TOUCHEVENTS && !Hammer.HAS_POINTEREVENTS) {
 Hammer.plugins.showTouches();
 Hammer.plugins.fakeMultitouch();
 
+
 $(document).ready(function(){
 
-	// disable drag scrolling in mobile browsers
-	document.body.addEventListener('touchmove', function(event) {
-		event.preventDefault();
-	}, false);
-
-	// disable default firefox image dragging to open it
-	document.body.addEventListener('dragstart', function(event) {
-		event.preventDefault();
-	}, false);
-
-
 	// initialize some jquery variables
-	var bar = $('#bar');
+	var topBar = $('#top-bar');
 	var connectForm = $('#connect-form');
 	var disconnectForm = $('#disconnect-form');
 	var clientName = $('#client-name');
 
 	var toggleBar = $('#toggle-bar');
 	var toggleAbout = $('#toggle-about');
+	var toggleLog = $('#toggle-log');
+	var toggleTitle = $('#toggle-title');
 
 	var notifyContainer = $('#notifications');
 	var clientContainer = $('#client-container');
 	var elementContainer = $('#element-container');
 
 	var sidebarRight = $('#sidebar-right');
+
 	var fileContainer = $('#file-container');
 	var uploadInput = $('#upload-input');
 	var youtubeAddButton = $('#youtube-add-button');
@@ -61,13 +65,12 @@ $(document).ready(function(){
 
 	var backgroundChanger = $('#background-changer');
 	var colorPicker = $('#colorpicker');
-	var trash = $('#trash');
-	var showLog = false;
+	var showLog = toggleLog.is(':checked');
 
 
 	// set element container's height = window height - topbar height
 	$(window).resize(function() {
-		elementContainer.css('height', $(document.body).height() - bar.outerHeight() - 20);
+		adjustElementContainer();
 	}).resize();
 
 
@@ -146,6 +149,7 @@ $(document).ready(function(){
 				o.transform = false;
 			}
 		})
+
 		.on("transform", function(event) {
 			if (o.transform) {
 				// compute transformation
@@ -169,21 +173,33 @@ $(document).ready(function(){
 				}
 			}
 		})
+
 		.on("transformend", function() {
 			// store transformation
 			o.lastScale = o.scale;
 			o.lastRotate = o.rotate % 360;
 			o.transform = true;
+
+			// show logging message
+			if (showLog) {
+				notifyContainer.notify({
+					message: {text: 'Element ' + id + ' rotiert/skaliert'}
+				}).show();
+			}
 		})
+
 		.on("dragstart", function(event){
 			// get element position
 			o.initialX = box.position().left;
 			o.initialY = box.position().top;
 
-			// compute touch offset from the object borders
-			o.offsetX = event.gesture.center.pageX - o.initialX;
-			o.offsetY = event.gesture.center.pageY - o.initialY;
+			if (event.gesture !== undefined) {
+				// compute touch offset from the object borders
+				o.offsetX = event.gesture.center.pageX - o.initialX;
+				o.offsetY = event.gesture.center.pageY - o.initialY;
+			}
 		})
+
 		.on("drag", function(event){
 			//new coordinates
 			o.positionX = event.gesture.center.pageX - o.offsetX;
@@ -203,6 +219,16 @@ $(document).ready(function(){
 					left: o.positionX,
 					top: o.positionY
 				});
+			}
+		})
+
+
+		.on("dragend", function(event){
+			// show logging message
+			if (showLog) {
+				notifyContainer.notify({
+					message: {text: 'Element ' + id + ' verschoben'}
+				}).show();
 			}
 		});
 	};
@@ -390,10 +416,6 @@ $(document).ready(function(){
 	function onDragStart(topic, event) {
 		if (event.session != sess.sessionid()) {
 			changeZIndex(event);
-
-			if (showLog) {
-				notifyContainer.notify({ message: { text: 'Bewege ' + event.id } }).show();
-			}
 		}
 	}
 
@@ -546,7 +568,7 @@ $(document).ready(function(){
 		}
 
 		// add element to file list
-		$('<dd data-id="' + file.id + '" class="clearfix"><i class="' + image + '"></i><span class="title">' + file.name + '</span><div class="btn-group"><button type="button" class="reset btn btn-warning" title="reset"><i class="icon-refresh"></i></button><button type="button" class="delete btn btn-danger" title="entfernen"><i class="icon-remove"></i></button></dd>').appendTo(fileContainer);
+		$('<dd data-id="' + file.id + '" class="clearfix"><i class="' + image + '"></i><span class="title">' + file.name + '</span><div class="btn-group"><button type="button" class="reset btn btn-warning" title="zur&#252cksetzen"><i class="icon-refresh"></i></button><button type="button" class="delete btn btn-danger" title="entfernen"><i class="icon-remove"></i></button></dd>').appendTo(fileContainer);
 
 		// create element
 		var box = $('<div class="element-box">'
@@ -792,17 +814,6 @@ $(document).ready(function(){
 
 
 
-/*****  DROP ELEMENTS INTO TRASH OR CLIENTS  *****/
-	trash.droppable({
-		activeClass: "active",
-		hoverClass: "hover",
-		drop: function(event, ui) {
-			console.log(event);
-			console.log(this);
-		}
-	});
-
-
 /*****  FILE LIST INTERACTION  *****/
 	fileContainer
 	.on('mouseenter', 'dd', function(event) {
@@ -835,12 +846,12 @@ $(document).ready(function(){
 	});
 
 	// options
-	$('#sidebar-right').find('input').iCheck({
+	sidebarRight.find('input').iCheck({
 		checkboxClass: 'icheckbox_square-orange',
 		radioClass: 'iradio_square-orange'
 	});
 
-	$('#toggleTitle').on('ifChanged', function(event){
+	toggleTitle.on('ifChanged', function(event){
 		var element = elementContainer.find('.element');
 		var title = element.find('.title');
 		if ($(event.target).is(':checked')) {
@@ -850,7 +861,7 @@ $(document).ready(function(){
 		}
 	});
 
-	$('#toggleLog').on('ifChanged', function(event){
+	toggleLog.on('ifChanged', function(event){
 		showLog = $(event.target).is(':checked');
 	});
 
@@ -873,8 +884,10 @@ $(document).ready(function(){
 	});
 
 	toggleBar.click(function(){
-		bar.slideToggle();
-		toggleBar.find('i').toggleClass('icon-chevron-up icon-chevron-down');
+		topBar.toggle('fast', '', function(){
+			adjustElementContainer();
+		});
+		toggleBar.toggleClass('btn-info').find('i').toggleClass('icon-chevron-up icon-chevron-down');
 	});
 
 	clientName.keypress(function(e){
@@ -980,6 +993,21 @@ $(document).ready(function(){
 		return $('#toggleTitle').is(':checked');
 	};
 
+	function adjustElementContainer() {
+		if (topBar.is(':visible')) {
+			elementContainer.css({
+				'height': $(document.body).height() - topBar.outerHeight(),
+				'margin-top': 67
+			});
+		} else {
+			elementContainer.css({
+				'height': $(document.body).height(),
+				'margin-top': 0
+			});
+		}
+	};
+
+
 	/*****  background changer  *****/
 	var backgroundChangerOpen = $('#background-changer-open');
 	var backgroundChangerClose = $('#background-changer-close');
@@ -1002,7 +1030,7 @@ $(document).ready(function(){
 
 
 	getServer = function(){
-		var server = $('#bar').find('.server-ip');
+		var server = topBar.find('.server-ip');
 		if (server.val() != '') {
 			return server.val() + '/PresenterServer/upload/';
 		} else {
