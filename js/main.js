@@ -1,28 +1,11 @@
-// disable drag scrolling in mobile browsers
-document.body.addEventListener('touchmove', function(event) {
-	event.preventDefault();
-}, false);
-
-// disable default firefox image dragging to open it
-document.body.addEventListener('dragstart', function(event) {
-	event.preventDefault();
-}, false);
-
-
+// CONFIGURATION
 var sess, msg, ip, uploadDir;
-
 var uploadPath = '/PresenterServer/upload/';	// path to local storage script (php required)
 
 var SCALE_MIN = 0.5;
 var SCALE_MAX = 3.0;
 var SCALE_SMOOOTHNESS = 0.9;
 var ROTATION_SMOOOTHNESS = 0.5;
-
-function round(x) {
-	var k = (Math.round(x * 100) / 100).toString();
-	k += (k.indexOf('.') == -1)? '.00' : '00';
-	return k.substring(0, k.indexOf('.') + 3);
-}
 
 
 /*if(!Hammer.HAS_TOUCHEVENTS && !Hammer.HAS_POINTEREVENTS) {
@@ -37,9 +20,28 @@ Hammer.plugins.showTouches();
 Hammer.plugins.fakeMultitouch();
 
 
+
+// disable drag scrolling in mobile browsers
+document.body.addEventListener('touchmove', function(event) {
+	event.preventDefault();
+}, false);
+
+// disable default firefox image dragging to open it
+document.body.addEventListener('dragstart', function(event) {
+	event.preventDefault();
+}, false);
+
+function round(x) {
+	var k = (Math.round(x * 100) / 100).toString();
+	k += (k.indexOf('.') == -1)? '.00' : '00';
+	return k.substring(0, k.indexOf('.') + 3);
+}
+
+
+
 $(document).ready(function(){
 
-	// initialize some jquery variables
+	// initialize required variables
 	var topBar = $('#top-bar');
 	var connectForm = $('#connect-form');
 	var disconnectForm = $('#disconnect-form');
@@ -49,13 +51,15 @@ $(document).ready(function(){
 	var toggleAbout = $('#toggle-about');
 	var toggleLog = $('#toggle-log');
 	var toggleTitle = $('#toggle-title');
+	var toggleSidebarRight = $('#toggle-sidebar-right');
+	var toggleGestures = $('#toggle-gestures');
 
 	var notifyContainer = $('#notifications');
-	var clientContainer = $('#client-container');
+	var sidebarLeft = $('#sidebar-left');
+	var sidebarRight = $('#sidebar-right');
 	var elementContainer = $('#element-container');
 
-	var sidebarRight = $('#sidebar-right');
-
+	var clientContainer = $('#client-container');
 	var fileContainer = $('#file-container');
 	var uploadInput = $('#upload-input');
 	var youtubeAddButton = $('#youtube-add-button');
@@ -66,9 +70,10 @@ $(document).ready(function(){
 	var backgroundChanger = $('#background-changer');
 	var colorPicker = $('#colorpicker');
 	var showLog = toggleLog.is(':checked');
+	var gesturesEnabled = toggleGestures.is(':checked');
 
 
-	// set element container's height = window height - topbar height
+	// update element container's height on screen resize
 	$(window).resize(function() {
 		adjustElementContainer();
 	}).resize();
@@ -132,63 +137,75 @@ $(document).ready(function(){
 
 		Hammer
 		.on("transformstart", function(event){
-			// get the original positions of the 2 touches
-			var touches = event.gesture.touches;
-			o.touch1X = touches[0].pageX;
-			o.touch1Y = touches[0].pageY;
-			o.touch2X = touches[1].pageX;
-			o.touch2Y = touches[1].pageY;
+			if (gesturesEnabled) {
+				// get the original positions of the 2 touches
+				var touches = event.gesture.touches;
+				o.touch1X = touches[0].pageX;
+				o.touch1Y = touches[0].pageY;
+				o.touch2X = touches[1].pageX;
+				o.touch2Y = touches[1].pageY;
 
-			// compute center of touches
-			o.touchCenterX = (o.touch1X + o.touch2X) / 2;
-			o.touchCenterY = (o.touch1Y + o.touch2Y) / 2;
+				// compute center of touches
+				o.touchCenterX = (o.touch1X + o.touch2X) / 2;
+				o.touchCenterY = (o.touch1Y + o.touch2Y) / 2;
 
-			// compute euclidean distance of touches
-			o.touchDistance = Math.sqrt(Math.pow(o.touch1X - o.touch2X, 2) + Math.pow(o.touch1Y - o.touch2Y, 2));
-			if (o.touchDistance > 200) {
-				o.transform = false;
+				// compute euclidean distance of touches
+				o.touchDistance = Math.sqrt(Math.pow(o.touch1X - o.touch2X, 2) + Math.pow(o.touch1Y - o.touch2Y, 2));
+				if (o.touchDistance > 200) {
+					o.transform = false;
+				}
 			}
 		})
 
 		.on("transform", function(event) {
-			if (o.transform) {
-				// compute transformation
-				o.rotate = o.lastRotate + event.gesture.rotation * ROTATION_SMOOOTHNESS;
-				o.scale = Math.max(SCALE_MIN, Math.min(o.lastScale * event.gesture.scale * SCALE_SMOOOTHNESS, SCALE_MAX));
+			if (gesturesEnabled) {
+				if (o.transform) {
+					// compute transformation
+					o.rotate = o.lastRotate + event.gesture.rotation * ROTATION_SMOOOTHNESS;
+					o.scale = Math.max(SCALE_MIN, Math.min(o.lastScale * event.gesture.scale * SCALE_SMOOOTHNESS, SCALE_MAX));
 
-				// transform element
-				el.css({
-					rotate: o.rotate,
-					scale: o.scale
-				});
-
-				// publish rotation & scale if connected
-				if (connected()) {
-					sess.publish("rotate-scale", {
-						session: sess.sessionid(),
-						id: id,
-						rotation: o.rotate,
+					// transform element
+					el.css({
+						rotate: o.rotate,
 						scale: o.scale
 					});
+
+					// publish rotation & scale if connected
+					if (connected()) {
+						sess.publish("rotate-scale", {
+							session: sess.sessionid(),
+							id: id,
+							rotation: o.rotate,
+							scale: o.scale
+						});
+					}
 				}
 			}
 		})
 
 		.on("transformend", function() {
-			// store transformation
-			o.lastScale = o.scale;
-			o.lastRotate = o.rotate % 360;
-			o.transform = true;
+			if (gesturesEnabled) {
+				// store transformation
+				o.lastScale = o.scale;
+				o.lastRotate = o.rotate % 360;
+				o.transform = true;
 
-			// show logging message
-			if (showLog) {
-				notifyContainer.notify({
-					message: {text: 'Element ' + id + ' rotiert/skaliert'}
-				}).show();
+				// show logging message
+				if (showLog) {
+					notifyContainer.notify({
+						message: {text: 'Element ' + id + ' rotiert/skaliert'}
+					}).show();
+				}
 			}
 		})
 
-		.on("dragstart", function(event){
+		.on("dragstart", function(event) {
+			// update z-index of element to be on top
+			var zIndex = getMaxZIndex() + 1;
+			el.parent().css({
+				zIndex: zIndex
+			});
+
 			// get element position
 			o.initialX = box.position().left;
 			o.initialY = box.position().top;
@@ -198,9 +215,18 @@ $(document).ready(function(){
 				o.offsetX = event.gesture.center.pageX - o.initialX;
 				o.offsetY = event.gesture.center.pageY - o.initialY;
 			}
+
+			// publish drag start if connected
+			if (connected()) {
+				sess.publish("drag-start", {
+					session: sess.sessionid(),
+					id: id,
+					zIndex: zIndex
+				});
+			}
 		})
 
-		.on("drag", function(event){
+		.on("drag", function(event) {
 			//new coordinates
 			o.positionX = event.gesture.center.pageX - o.offsetX;
 			o.positionY = event.gesture.center.pageY - o.offsetY;
@@ -223,12 +249,22 @@ $(document).ready(function(){
 		})
 
 
-		.on("dragend", function(event){
+		.on("dragend", function(event) {
 			// show logging message
 			if (showLog) {
 				notifyContainer.notify({
 					message: {text: 'Element ' + id + ' verschoben'}
 				}).show();
+			}
+
+			// publish position if connected
+			if (connected()) {
+				sess.publish("drag-end", {
+					session: sess.sessionid(),
+					id: id,
+					left: o.positionX,
+					top: o.positionY
+				});
 			}
 		});
 	};
@@ -238,7 +274,7 @@ $(document).ready(function(){
 /*****  WEB SOCKET SERVER COMMUNICATION  *****/
 
 	// connect to WAMP server
-	function connect(server){
+	function connect(server) {
 		var url = "ws://" + server + ":8080";
 		ab.connect(url, function(session){
 
@@ -263,8 +299,7 @@ $(document).ready(function(){
 			});
 
 			// re-initialize upload script with connected server
-			//uploadInput.fileupload('destroy');
-			if (server == 'localhost') {
+			if (server === 'localhost') {
 				initializeFileUpload(server, '/PresenterServer/upload/');
 			} else {
 				initializeFileUpload(server, '/upload/');
@@ -286,19 +321,19 @@ $(document).ready(function(){
 				});
 			});
 
-			// show message
+			// show connection message
 			notifyContainer.notify({
 				message: {
 					text: 'Verbindung zum Server wurde hergestellt!'
 				}
 			}).show();
 
-			// modify layout
+			// update layout
 			connectForm.hide();
 			disconnectForm.show();
 			disconnectForm.find('.server-ip').text(server);
 			disconnectForm.find('.client-name').val(sess.sessionid());
-			clientContainer.fadeIn('slow');
+			sidebarLeft.fadeIn('slow');
 			colorPicker.trigger('change');
 			$('body').removeClass('wait');
 		},
@@ -331,7 +366,7 @@ $(document).ready(function(){
 		// reset layout
 		connectForm.show().find('button').button('reset');
 		disconnectForm.hide().find('.server-ip').html('');
-		clientContainer.fadeOut('slow');
+		sidebarLeft.fadeOut('slow');
 		clientContainer.html('');
 		$('body').removeClass('wait');
 	};
@@ -417,6 +452,10 @@ $(document).ready(function(){
 		if (event.session != sess.sessionid()) {
 			changeZIndex(event);
 		}
+
+		console.log('drag start');
+		// highlight active client
+		highlightActiveClient(event.session);
 	}
 
 	function onDrag(topic, event) {
@@ -472,7 +511,10 @@ $(document).ready(function(){
 		var files = [];
 		elementContainer.find('.element').each(function(i, element) {
 			var el = $(element);
-			var position = el.position();
+			// use position of outer box 'element-box',
+			// but transformation of inner box 'element'
+			// to achieve consistence between different clients
+			var position = el.parent().position();
 
 			var file = {
 				id: el.prop('id'),
@@ -481,7 +523,7 @@ $(document).ready(function(){
 				left: position.left,
 				top: position.top,
 				index: el.css('z-index'),
-				rotation: el.css('rotation'),
+				rotation: el.css('rotate'),
 				scale: el.css('scale')
 			}
 			files.push(file);
@@ -502,6 +544,7 @@ $(document).ready(function(){
 		// check file type
 		switch (file.type) {
 
+		// - image
 		case 'image/jpeg':
 		case 'image/png':
 		case 'image/gif':
@@ -512,6 +555,7 @@ $(document).ready(function(){
 			content = '<img src="' + uploadDir + 'files/' + file.name + '" />';
 			break;
 
+		// - video
 		case 'video/mp4':
 		case 'video/ogv':
 		case 'video/webm':
@@ -520,6 +564,7 @@ $(document).ready(function(){
 			content = '<video src="' + uploadDir + 'files/' + file.name + '" width="100%" controls preload></video>';
 			break;
 
+		// - audio
 		case 'audio/mpeg':
 		case 'audio/ogg':
 			type = 'audio';
@@ -527,18 +572,21 @@ $(document).ready(function(){
 			content = '<audio src="' + uploadDir + 'files/' + file.name + '" width="100%" controls preload></audio>';
 			break;
 
+		// youtube video
 		case 'video/youtube':
 			type = 'video';
 			image = 'icon-film';
-			content = '<iframe width="100%" height="95%" src="http://www.youtube.com/embed/' + file.name + '?autoplay=1&rel=0" frameborder="0" allowfullscreen></iframe><div class="clearfix"></div>';
+			content = '<iframe width="100%" height="95%" src="http://www.youtube.com/embed/' + file.name + '?autoplay=1&rel=0" frameborder="0" allowfullscreen></iframe><div class="overlay"></div><div class="clearfix"></div>';
 			break;
 
+		// - pdf
 		case 'application/pdf':
 			type = 'pdf';
 			image = 'icon-file';
 			content = '<object data="' + uploadDir + 'files/' + file.name + '" type="application/pdf" width="400" height="300"><p>Kein PDF-Plugin vorhanden! <a href="' + uploadDir + 'files/' + file.name + '">PDF-Datei speichern</a></p></object>';
 			break;
 
+		// - text file
 		case 'text/plain':
 		case 'text/html':
 			type = 'text';
@@ -546,6 +594,7 @@ $(document).ready(function(){
 			content = '';
 			break;
 
+		// - unknown file type
 		default:
 			type = 'unknown';
 			image = 'icon-question-sign';
@@ -578,17 +627,22 @@ $(document).ready(function(){
 								+ '</div>'
 							+ '</div>');
 
-		// add element to surface
-		box.appendTo(elementContainer)
-		.css({
+		// add outer box 'element-box' to surface at the specific position
+		box.appendTo(elementContainer).css({
+			left: file.left,
+			top: file.top,
+			zIndex: file.index
+		});
+		console.log(file);
+
+		// get inner box 'element'
+		var element = box.find('.element');
+
+		// rotate/scale inner box
+		element.css({
 			rotate: file.rotation,
 			scale: file.scale,
-			x: file.left,
-			y: file.top,
-			'z-index': file.index
 		});
-
-		var element = box.find('.element');
 
 		// enable touch gestures
 		Touch(element);
@@ -620,18 +674,10 @@ $(document).ready(function(){
 			}
 		});
 
-		/*el.position.x = 0;
-		el.position.y = 0;
-		el.lastPosition.y = 0;
-		el.lastPosition.x = 0;
-		el.rotation = 0;
-		el.lastRotation = 0;
-		el.scale = 1;
-		el.lasScale = 1;*/
 		var data = {
 			id: file.data('id'),
-			left: 0,
-			top: 0,
+			left: 10,
+			top: 10,
 			rotation: 0,
 			scale: 1
 		};
@@ -681,11 +727,11 @@ $(document).ready(function(){
 	};
 
 	function changePosition(data) {
-		var el = $('#' + data.id);
+		var el = $('#' + data.id).parent();
 		if (el.length) {
 			el.css({
-				x: data.left,
-				y: data.top
+				left: data.left,
+				top: data.top
 			});
 		}
 	};
@@ -742,13 +788,21 @@ $(document).ready(function(){
 
 	function getMaxZIndex() {
 		var maxIndex = 0;
-		elementContainer.find('.element').each(function(){
+		elementContainer.find('.element-box').each(function(){
 			var index = parseInt($(this).css('z-index'), 10);
 			if (index > maxIndex) {
 				maxIndex = index;
 			}
 		});
 		return maxIndex;
+	};
+
+	function highlightActiveClient(session) {
+		clientContainer.find('.client').each(function(i, element) {
+			if ($(element).data('session') == session) {
+				console.log(element);
+			}
+		});
 	};
 
 
@@ -813,6 +867,20 @@ $(document).ready(function(){
 	};
 
 
+/*****  TOP BAR INTERACTION  *****/
+	toggleBar.click(function(){
+		topBar.toggle('fast', '', function(){
+			adjustElementContainer();
+			if (topBar.is(':visible')) {
+				toggleAbout.show();
+				$('#toggle-bar-content').show();
+			} else {
+				toggleAbout.hide();
+				$('#toggle-bar-content').hide();
+			}
+		});
+		toggleBar.toggleClass('btn-info').find('i').toggleClass('icon-chevron-up icon-chevron-down');
+	});
 
 /*****  FILE LIST INTERACTION  *****/
 	fileContainer
@@ -845,7 +913,12 @@ $(document).ready(function(){
 		});
 	});
 
-	// options
+	// file list options
+	toggleSidebarRight.click(function(){
+		sidebarRight.find('.sidebar-content').toggle('fast');
+		toggleSidebarRight.toggleClass('btn-info').find('i').toggleClass('icon-chevron-right icon-chevron-left');
+	});
+
 	sidebarRight.find('input').iCheck({
 		checkboxClass: 'icheckbox_square-orange',
 		radioClass: 'iradio_square-orange'
@@ -863,6 +936,10 @@ $(document).ready(function(){
 
 	toggleLog.on('ifChanged', function(event){
 		showLog = $(event.target).is(':checked');
+	});
+
+	toggleGestures.on('ifChanged', function(event){
+		gesturesEnabled = $(event.target).is(':checked');
 	});
 
 
@@ -883,25 +960,17 @@ $(document).ready(function(){
 		disconnect('Verbindung zum Server wurde getrennt!');
 	});
 
-	toggleBar.click(function(){
-		topBar.toggle('fast', '', function(){
-			adjustElementContainer();
+	clientName.keyup(function(e){
+		// publish new name
+		sess.publish("change-name", {
+			session: sess.sessionid(),
+			name: clientName.val()
 		});
-		toggleBar.toggleClass('btn-info').find('i').toggleClass('icon-chevron-up icon-chevron-down');
-	});
-
-	clientName.keypress(function(e){
-
+	}).keypress(function(e){
 		var charCode = e.keyCode || e.which;
 		if (charCode === 13) {
 			// disable Enter key to prevent disconnect form submit
 			return false;
-		} else {
-			// publish new name
-			sess.publish("change-name", {
-				session: sess.sessionid(),
-				name: clientName.val()
-			});
 		}
 	});
 
@@ -997,7 +1066,7 @@ $(document).ready(function(){
 		if (topBar.is(':visible')) {
 			elementContainer.css({
 				'height': $(document.body).height() - topBar.outerHeight(),
-				'margin-top': 67
+				'margin-top': 70
 			});
 		} else {
 			elementContainer.css({
