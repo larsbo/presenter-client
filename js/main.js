@@ -221,7 +221,7 @@ $(document).ready(function(){
 				sess.publish("drag-start", {
 					session: sess.sessionid(),
 					id: id,
-					zIndex: zIndex
+					index: zIndex
 				});
 			}
 		})
@@ -453,7 +453,6 @@ $(document).ready(function(){
 			changeZIndex(event);
 		}
 
-		console.log('drag start');
 		// highlight active client
 		highlightActiveClient(event.session);
 	}
@@ -633,7 +632,6 @@ $(document).ready(function(){
 			top: file.top,
 			zIndex: file.index
 		});
-		console.log(file);
 
 		// get inner box 'element'
 		var element = box.find('.element');
@@ -739,7 +737,9 @@ $(document).ready(function(){
 	function changeZIndex(data) {
 		var el = $('#' + data.id);
 		if (el.length) {
-			el.css('z-index', data.index);
+			el.parent().css({
+				zIndex: data.index + 2
+			});
 		}
 	};
 
@@ -800,7 +800,10 @@ $(document).ready(function(){
 	function highlightActiveClient(session) {
 		clientContainer.find('.client').each(function(i, element) {
 			if ($(element).data('session') == session) {
-				console.log(element);
+				$(element).find('img').removeClass('active').addClass('active').delay('500').queue(function(next){
+					$(this).removeClass('active');
+					next();
+				});
 			}
 		});
 	};
